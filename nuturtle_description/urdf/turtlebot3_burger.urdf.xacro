@@ -5,22 +5,24 @@
   <xacro:property name="param" value="${load_yaml(diff_params)}"/>
   <xacro:property name="wheel_radius" value="${param['wheel_radius']}" />
   <xacro:property name="track_width" value="${param['track_width']}" />
+  <xacro:arg name="color" default="red"/>
+  <xacro:property name="color" value="$(arg prefix)"/>
 
-  <link name="base_footprint"/>
+  <link name="${color}_base_footprint"/>
 
-  <joint name="base_joint" type="fixed">
-    <parent link="base_footprint"/>
-    <child link="base_link"/>
+  <joint name="${color}_base_joint" type="fixed">
+    <parent link="${color}_base_footprint"/>
+    <child link="${color}_base_link"/>
     <origin xyz="0.0 0.0 0.010" rpy="0 0 0"/>
   </joint>
 
-  <link name="base_link">
+  <link name="${color}_base_link">
     <visual>
       <origin xyz="-0.032 0 0.0" rpy="0 0 0"/>
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/burger_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="light_black"/>
+      <material name="${color}"/>
     </visual>
 
     <collision>
@@ -39,20 +41,20 @@
     </inertial>
   </link>
 
-  <joint name="wheel_left_joint" type="continuous">
-    <parent link="base_link"/>
-    <child link="wheel_left_link"/>
+  <joint name="${color}_wheel_left_joint" type="continuous">
+    <parent link="${color}_base_link"/>
+    <child link="${color}_wheel_left_link"/>
     <origin xyz="0.0 ${track_width/2} 0.023" rpy="-1.57 0 0"/>
     <axis xyz="0 0 1"/>
   </joint>
 
-  <link name="wheel_left_link">
+  <link name="${color}_wheel_left_link">
     <visual>
       <origin xyz="0 0 0" rpy="1.57 0 0"/>
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/left_tire.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="dark"/>
+      <material name="${color}"/>
     </visual>
 
     <collision>
@@ -71,20 +73,20 @@
       </inertial>
   </link>
 
-  <joint name="wheel_right_joint" type="continuous">
-    <parent link="base_link"/>
-    <child link="wheel_right_link"/>
+  <joint name="${color}_wheel_right_joint" type="continuous">
+    <parent link="${color}_base_link"/>
+    <child link="${color}_wheel_right_link"/>
     <origin xyz="0.0 ${-track_width/2} 0.023" rpy="-1.57 0 0"/>
     <axis xyz="0 0 1"/>
   </joint>
 
-  <link name="wheel_right_link">
+  <link name="${color}_wheel_right_link">
     <visual>
       <origin xyz="0 0 0" rpy="1.57 0 0"/>
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/right_tire.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="dark"/>
+      <material name="${color}"/>
     </visual>
 
     <collision>
@@ -103,13 +105,13 @@
       </inertial>
   </link>
 
-  <joint name="caster_back_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="caster_back_link"/>
+  <joint name="${color}_caster_back_joint" type="fixed">
+    <parent link="${color}_base_link"/>
+    <child link="${color}_caster_back_link"/>
     <origin xyz="-0.081 0 -0.004" rpy="-1.57 0 0"/>
   </joint>
 
-  <link name="caster_back_link">
+  <link name="${color}_caster_back_link">
     <collision>
       <origin xyz="0 0.001 0" rpy="0 0 0"/>
       <geometry>
@@ -126,27 +128,27 @@
     </inertial>
   </link>
 
-  <joint name="imu_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="imu_link"/>
+  <joint name="${color}_imu_joint" type="fixed">
+    <parent link="${color}_base_link"/>
+    <child link="${color}_imu_link"/>
     <origin xyz="-0.032 0 0.068" rpy="0 0 0"/>
   </joint>
 
-  <link name="imu_link"/>
+  <link name="${color}_imu_link"/>
 
-  <joint name="scan_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="base_scan"/>
+  <joint name="${color}_scan_joint" type="fixed">
+    <parent link="${color}_base_link"/>
+    <child link="${color}_base_scan"/>
     <origin xyz="-0.032 0 0.172" rpy="0 0 0"/>
   </joint>
 
-  <link name="base_scan">
+  <link name="${color}_base_scan">
     <visual>
       <origin xyz="0 0 0.0" rpy="0 0 0"/>
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/lds.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="dark"/>
+      <material name="${color}"/>
     </visual>
 
     <collision>

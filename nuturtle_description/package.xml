@@ -54,7 +54,8 @@
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rviz</exec_depend>
   <exec_depend>xacro</exec_depend>
-
+  <exec_depend>joint_state_publisher</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
