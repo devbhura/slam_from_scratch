@@ -1,0 +1,27 @@
+<launch>
+
+    <include file="$(find nuturtle_description)/launch/load.launch">
+        <arg name="color" value="red"/>
+        <arg name="x" value="1"/>
+
+    </include>
+
+    <include file="$(find nuturtle_description)/launch/load.launch">
+        <arg name="color" value="green"/>
+        <arg name="y" value="1"/>
+
+    </include>
+
+    <include file="$(find nuturtle_description)/launch/load.launch">
+        <arg name="color" value="blue"/>
+        <arg name="x" value="-1"/>
+
+    </include>
+
+     <include file="$(find nuturtle_description)/launch/load.launch">
+        <arg name="color" value="black"/>
+        <arg name="y" value="-1"/>
+
+    </include>
+
+</launch>
