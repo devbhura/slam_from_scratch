@@ -103,7 +103,7 @@ namespace turtlelib
     {
     private:
         Vector2D vec;
-        double angle;
+        double theta;
         
     public:
         /// \brief Create an identity transformation
