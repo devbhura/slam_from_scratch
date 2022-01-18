@@ -4,6 +4,8 @@
 int main()
 {
     turtlelib::Transform2D T_ab, T_ba, T_bc, T_cb, T_ac, T_ca;
+    turtlelib::Vector2D v_b, v_a, v_c, v_bhat;
+    turtlelib::Twist V_a, V_b, V_c;
 
     std::cout << "Enter transform T_{a,b}:" << std::endl;
     std::cin >> T_ab;
@@ -25,6 +27,11 @@ int main()
 
     std::cout <<"T_{a,c}: " << T_ac << std::endl;
     std::cout <<"T_{c,a}: " << T_ca << std::endl;
+
+    std::cout << "Enter vector v_b:" << std::endl;
+    std::cin >> v_b;
+
+
     
 
 }

@@ -71,6 +71,19 @@ namespace turtlelib
         double y = 0.0;
     };
 
+    /// \brief A 2-Dimensional Twist
+    struct Twist
+    {
+        /// \brief the angular velocity
+        double thetadot = 0.0;
+
+        /// \brief the linear velocity in x
+        double xdot = 0.0;
+
+        /// \brief the linear velocity in y
+        double ydot = 0.0;
+    };
+
 
 
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]
@@ -174,7 +187,9 @@ namespace turtlelib
     Transform2D operator*(Transform2D lhs, const Transform2D & rhs);
 
 
+    std::ostream & operator<<(std::ostream & os, const Twist & twist); 
 
+    std::istream & operator>>(std::istream & is, Twist & twist);
 }
 
 #endif
