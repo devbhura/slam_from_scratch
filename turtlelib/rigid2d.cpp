@@ -126,9 +126,35 @@ std::ostream & turtlelib::operator<<(std::ostream & os, const turtlelib::Transfo
 }
 
 
+std::istream & turtlelib::operator>>(std::istream & is, turtlelib::Transform2D & tf)
+{
+    turtlelib::Vector2D vector;
+    double theta;
 
+    std::cout << "deg: ";
+    is >> theta;
+    std::cout << " x: ";
+    is >> vector.x;
+    std::cout << " y: ";
+    is >> vector.y;
 
-int main(){
-    std::cout<< "done\n";
-  return 0;  
+    // is >> "deg:" >> theta >> "x:" >> vector.x >> "y:">> vector.y;
+
+    theta = deg2rad(theta);
+    tf = turtlelib::Transform2D(vector,theta);
+
+    return is;
 }
+
+turtlelib::Transform2D turtlelib::operator*(turtlelib::Transform2D lhs, const turtlelib::Transform2D & rhs)
+{
+    turtlelib::Transform2D mult;
+    lhs *= rhs;
+    mult = lhs;
+    return mult;
+}
+
+// int main(){
+//     std::cout<< "done\n";
+//   return 0;  
+// }
