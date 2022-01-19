@@ -141,6 +141,12 @@ namespace turtlelib
         /// \return a vector in the new coordinate system
         Vector2D operator()(Vector2D v) const;
 
+        /// \brief apply a transformation to a Twist
+        /// \param twist - the twist to transform
+        /// \return a twist in the new coordinate system
+        Twist operator()(Twist twist) const;
+
+
 
         /// \brief invert the transformation
         /// \return the inverse transformation. 

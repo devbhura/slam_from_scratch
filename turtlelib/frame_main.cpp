@@ -31,7 +31,22 @@ int main()
     std::cout << "Enter vector v_b:" << std::endl;
     std::cin >> v_b;
 
+    v_c = T_cb(v_b);
+    v_a = T_ab(v_b);
 
-    
+
+    std::cout << "v_a:" << v_a << std::endl;
+    std::cout << "v_b:" << v_b << std::endl;
+    std::cout << "v_c:" << v_c << std::endl;
+
+    std::cout << "Enter Twist V_b:" << std::endl;
+    std::cin >> V_b;
+
+    V_c = T_cb(V_b);
+    V_a = T_ab(V_b);
+
+    std::cout << "V_a:" << V_a << std::endl;
+    std::cout << "V_b:" << V_b << std::endl;
+    std::cout << "V_c:" << V_c << std::endl;
 
 }

@@ -45,6 +45,16 @@ turtlelib::Vector2D turtlelib::Transform2D::operator()(turtlelib::Vector2D v) co
     return newv;
 }
 
+turtlelib::Twist turtlelib::Transform2D::operator()(turtlelib::Twist twist) const
+{
+    turtlelib::Twist newtw;
+    newtw.thetadot = twist.thetadot;
+    newtw.xdot = vec.y*twist.thetadot + cos(theta)*twist.xdot - sin(theta)*twist.ydot;
+    newtw.ydot = -vec.x*twist.thetadot + sin(theta)*twist.xdot + cos(theta)*twist.ydot;
+
+    return newtw;
+}
+
 
 turtlelib::Transform2D turtlelib::Transform2D::inv() const
 {
