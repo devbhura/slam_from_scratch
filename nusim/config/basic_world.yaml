@@ -1,4 +1,5 @@
 obs_radius: 0.038
+rate: 500
 x0: -0.6
 y0: 0.8 
 theta0: 1.57

@@ -1,3 +1,33 @@
+/// \brief 
+/**
+ * PARAMETERS
+    * timestep (double): tracks the current time step of the simulation
+    * x0 (double): initial x position of the robot loaded
+    * yinit (double): initial y position of the robot loaded
+    * theta0 (double): initial theta orientation of the robot loaded
+    * x (double): current x position of the robot 
+    * y (double): current y position of the robot 
+    * theta (double): current theta orientation of the robot 
+    * obs_radius (double): radius of the obstacles
+    * obstacles_array (visualization_msgs/MarkerArray): Creates a Marker Array for the obstacles
+    * obstacles_x_arr (vector<double>): loads the x coordinates of all the obstacles in an array
+    * obstacles_y_arr (vector<double>): loads the y coordinates of all the obstacles in an array
+    * obstacles_theta_arr (vector<double>): loads the theta coordinates of all the obstacles in an array
+    * loop_rate (ROS::Rate): defines the rate of the while loop
+    * r (int): takes the rate from the parameters
+ * BROADCASTERS
+    * br: Broadcasts transform from world frame to red_base_footprint frame 
+ * PUBLISHERS
+    * obstacle_marker: publishes the obstacle marker 
+    * pub: publishes the timestep
+    * joint_msg_pub: publishes the joint states
+ * SERVICES
+    *  reset: resets the position of the turtlebot3 to the original position
+    *  teleport: sets the position of the turtlebot3 to a new user specified position
+ * SUBSCRIBERS
+ */
+
+
 #include "ros/ros.h"
 #include "std_msgs/UInt64.h"
 #include "std_srvs/Trigger.h"
@@ -24,6 +54,12 @@ ros::Publisher obstacle_marker;
 
 bool reset_callback(std_srvs::TriggerRequest& request, std_srvs::TriggerResponse& response)
 {
+    /* callback for reset service that resets the positon of the robot to the original position
+     * Input
+        * None
+     * Output
+        * true (boolean)
+    */
     timestep = 0.0;
     x = x0;
     y = yinit;
@@ -35,6 +71,14 @@ bool reset_callback(std_srvs::TriggerRequest& request, std_srvs::TriggerResponse
 
 bool teleport_callback(nusim::teleport::Request& input, nusim::teleport::Response& response)
 {
+    /* callback for teleport services that sets the robot to the user defined position
+     * Input
+        * request.x: x position to set the robot to
+        * request.y: y position to set the robot to
+        * request.theta: theta orientation to set the robot to
+     * Output
+        * true (boolean)
+    */
 
     x = input.x;
     y = input.y;
@@ -45,6 +89,12 @@ bool teleport_callback(nusim::teleport::Request& input, nusim::teleport::Respons
 
 void obstacles()
 {   
+    /* function that sets the obstacle marker array and publishes 
+     * Input  
+        * None
+     * Output
+        * None
+    */
 
     obstacles_array.markers.resize(obstacles_x_arr.size());
 
@@ -153,7 +203,6 @@ int main(int argc, char** argv)
     joint_msg.position.push_back(0.0);
     joint_msg.position.push_back(0.0);
     joint_msg_pub.publish(joint_msg);
-        
     
     
     while(ros::ok())
@@ -178,6 +227,7 @@ int main(int argc, char** argv)
         transformStamped.transform.rotation.w = q.w();
         br.sendTransform(transformStamped);
         ROS_DEBUG("x0: %f", x0);
+        
         obstacles();
     
 
