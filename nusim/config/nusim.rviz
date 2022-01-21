@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /RobotModel1
+        - /MarkerArray1
       Splitter Ratio: 0.5
     Tree Height: 618
   - Class: rviz/Selection
@@ -132,18 +133,27 @@ Visualization Manager:
       Tree:
         world:
           red_base_footprint:
-            red_base_link:
-              red_base_scan:
-                {}
-              red_caster_back_link:
-                {}
-              red_imu_link:
-                {}
-              red_wheel_left_link:
-                {}
-              red_wheel_right_link:
-                {}
+            {}
+          red_base_link:
+            red_base_scan:
+              {}
+            red_caster_back_link:
+              {}
+            red_imu_link:
+              {}
+            red_wheel_left_link:
+              {}
+            red_wheel_right_link:
+              {}
       Update Interval: 0
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /obstacle/obs
+      Name: MarkerArray
+      Namespaces:
+        "": true
+      Queue Size: 100
       Value: true
   Enabled: true
   Global Options:
@@ -173,7 +183,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.176626682281494
+      Distance: 2.7989039421081543
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -189,9 +199,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6603981256484985
+      Pitch: 0.3353976905345917
       Target Frame: <Fixed Frame>
-      Yaw: 0.9903978109359741
+      Yaw: 2.385399580001831
     Saved: ~
 Window Geometry:
   Displays:
@@ -210,4 +220,4 @@ Window Geometry:
     collapsed: true
   Width: 1396
   X: 292
-  Y: 86
+  Y: 49

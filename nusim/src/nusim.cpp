@@ -10,6 +10,7 @@
 #include "nusim/teleport.h"
 #include "visualization_msgs/Marker.h"
 #include "visualization_msgs/MarkerArray.h"
+#include "ros/console.h"
 
 
 static double timestep;
@@ -96,7 +97,7 @@ int main(int argc, char** argv)
     
     // define variables
     sensor_msgs::JointState joint_msg;
-    ros::Rate loop_rate(10);
+    
 
     // define services
     ros::ServiceServer reset = nh.advertiseService("reset",  reset_callback);
@@ -105,7 +106,7 @@ int main(int argc, char** argv)
     // Define Publishers
     ros::Publisher pub = nh.advertise<std_msgs::UInt64>("timestep", 100);
     ros::Publisher joint_msg_pub = red.advertise<sensor_msgs::JointState>("joint_states", 1);
-    obstacle_marker = obstacle.advertise<visualization_msgs::MarkerArray>("obs", 1);
+    obstacle_marker = obstacle.advertise<visualization_msgs::MarkerArray>("obs", 1, true);
     
 
 
@@ -113,7 +114,6 @@ int main(int argc, char** argv)
     int r;
     timestep = 0;
     nh.param("rate", r, 500);
-    nh.param("timestep", timestep, 10.0);
     nh.param("x0",x0,0.0);
     nh.param("y0",yinit,0.0);
     nh.param("theta0",theta0,0.0);
@@ -121,6 +121,8 @@ int main(int argc, char** argv)
     nh.getParam("obstacles_y_arr", obstacles_y_arr);
     nh.getParam("obstacles_theta_arr", obstacles_theta_arr);
     nh.param("obs_radius",obs_radius,0.025);
+
+    ros::Rate loop_rate(r);
 
     x = x0;
     y = yinit;
@@ -134,7 +136,7 @@ int main(int argc, char** argv)
 
     transformStamped.header.stamp = ros::Time::now();
     transformStamped.header.frame_id = "world";
-    transformStamped.child_frame_id = "red_base_link";
+    transformStamped.child_frame_id = "red_base_footprint";
     transformStamped.transform.translation.x = x;
     transformStamped.transform.translation.y = y;
     transformStamped.transform.translation.z = 0.0;
@@ -153,7 +155,7 @@ int main(int argc, char** argv)
     joint_msg_pub.publish(joint_msg);
         
     
-    obstacles();
+    
     while(ros::ok())
     {
         
@@ -175,6 +177,9 @@ int main(int argc, char** argv)
         transformStamped.transform.rotation.z = q.z();
         transformStamped.transform.rotation.w = q.w();
         br.sendTransform(transformStamped);
+        ROS_DEBUG("x0: %f", x0);
+        obstacles();
+    
 
     }
 

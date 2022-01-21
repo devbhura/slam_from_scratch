@@ -1,6 +1,6 @@
 <launch>
 
-    <node name="nusim_node" pkg="nusim" type="nusim_node"/>
+    <node name="nusim_node" pkg="nusim" type="nusim_node" output="screen"/>
 
     <arg name="use_rviz" default="true"/>
     <arg name="use_jsp" default="false"/>
@@ -8,6 +8,8 @@
     <arg name="x" default="0"/>
     <arg name="y" default="0"/>
     <arg name="z" default="0"/>
+
+    <rosparam command="load" file="$(find nusim)/config/basic_world.yaml" ns="nusim_node"/>
 
     <group if="$(arg use_rviz)">
 
