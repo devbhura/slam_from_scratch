@@ -113,6 +113,9 @@ catkin_package(
 #  LIBRARIES nusim
   CATKIN_DEPENDS 
   roscpp
+  geometry_msgs
+  message_runtime
+  std_msgs
 #  DEPENDS system_lib
 )
 

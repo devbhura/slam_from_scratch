@@ -16,8 +16,10 @@ static double timestep;
 static double x, x0;
 static double y, yinit; 
 static double theta, theta0;
-
-
+static double obs_radius;
+visualization_msgs::MarkerArray obstacles_array;
+std::vector<double> obstacles_x_arr, obstacles_y_arr, obstacles_theta_arr;
+ros::Publisher obstacle_marker;
 
 bool reset_callback(std_srvs::TriggerRequest& request, std_srvs::TriggerResponse& response)
 {
@@ -41,19 +43,45 @@ bool teleport_callback(nusim::teleport::Request& input, nusim::teleport::Respons
 }
 
 void obstacles()
-{
-    visualization_msgs::Marker obstacles;
-    geometry_msgs::Point pos;
+{   
 
-    obstacles.type = obstacles.CYLINDER;
-    obstacles.color.r = 1;
-    obstacles.color.g = 0;
-    obstacles.color.b = 0;
-    obstacles.color.a = 1;
+    obstacles_array.markers.resize(obstacles_x_arr.size());
 
-    
+    for (int i = 0; i<obstacles_x_arr.size(); i++)
+    {
+        
+        obstacles_array.markers[i].header.frame_id = "world";
+        obstacles_array.markers[i].header.stamp = ros::Time::now();
+        obstacles_array.markers[i].id = i;
+
+        obstacles_array.markers[i].type = visualization_msgs::Marker::CYLINDER;
+        obstacles_array.markers[i].action = visualization_msgs::Marker::ADD;
+
+        obstacles_array.markers[i].pose.position.x = obstacles_x_arr[i];
+        obstacles_array.markers[i].pose.position.y = obstacles_y_arr[i];
+        obstacles_array.markers[i].pose.position.z = 0.0;
+
+        tf2::Quaternion q_obs;
+        q_obs.setRPY(0, 0, obstacles_theta_arr[i]);
+
+        obstacles_array.markers[i].pose.orientation.x = q_obs.x();
+        obstacles_array.markers[i].pose.orientation.y = q_obs.y();
+        obstacles_array.markers[i].pose.orientation.z = q_obs.z();
+        obstacles_array.markers[i].pose.orientation.w = q_obs.w();
+
+        obstacles_array.markers[i].scale.x = 2*obs_radius;
+        obstacles_array.markers[i].scale.y = 2*obs_radius;
+        obstacles_array.markers[i].scale.z = 0.25;
 
 
+        obstacles_array.markers[i].color.r = 1;
+        obstacles_array.markers[i].color.g = 0;
+        obstacles_array.markers[i].color.b = 0;
+        obstacles_array.markers[i].color.a = 1;
+
+    }
+
+    obstacle_marker.publish(obstacles_array);
 
 }
 
@@ -64,6 +92,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "nusim");
     ros::NodeHandle nh("~");
     ros::NodeHandle red("red");
+    ros::NodeHandle obstacle("obstacle");
     
     // define variables
     sensor_msgs::JointState joint_msg;
@@ -76,6 +105,7 @@ int main(int argc, char** argv)
     // Define Publishers
     ros::Publisher pub = nh.advertise<std_msgs::UInt64>("timestep", 100);
     ros::Publisher joint_msg_pub = red.advertise<sensor_msgs::JointState>("joint_states", 1);
+    obstacle_marker = obstacle.advertise<visualization_msgs::MarkerArray>("obs", 1);
     
 
 
@@ -87,6 +117,11 @@ int main(int argc, char** argv)
     nh.param("x0",x0,0.0);
     nh.param("y0",yinit,0.0);
     nh.param("theta0",theta0,0.0);
+    nh.getParam("obstacles_x_arr", obstacles_x_arr);
+    nh.getParam("obstacles_y_arr", obstacles_y_arr);
+    nh.getParam("obstacles_theta_arr", obstacles_theta_arr);
+    nh.param("obs_radius",obs_radius,0.025);
+
     x = x0;
     y = yinit;
     theta = theta0;
@@ -118,7 +153,7 @@ int main(int argc, char** argv)
     joint_msg_pub.publish(joint_msg);
         
     
-
+    obstacles();
     while(ros::ok())
     {
         

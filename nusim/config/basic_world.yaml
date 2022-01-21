@@ -1,0 +1,7 @@
+obs_radius: 0.038
+x0: -0.6
+y0: 0.8 
+theta0: 1.57
+obstacles_x_arr: [-0.6, 0.6, 0.6]
+obstacles_y_arr: [-0.8, -0.8, 0.8]
+obstacles_theta_arr: [0, 0, 0]
