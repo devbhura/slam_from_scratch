@@ -33,8 +33,9 @@ int main()
 
     v_c = T_cb(v_b);
     v_a = T_ab(v_b);
+    v_bhat = turtlelib::normalize(v_b);
 
-
+    std::cout << "v_bhat:" << v_bhat << std::endl;
     std::cout << "v_a:" << v_a << std::endl;
     std::cout << "v_b:" << v_b << std::endl;
     std::cout << "v_c:" << v_c << std::endl;

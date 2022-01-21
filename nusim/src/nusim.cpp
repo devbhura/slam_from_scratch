@@ -132,7 +132,7 @@ void obstacles()
 
     }
 
-    obstacle_marker.publish(obstacles_array);
+   obstacle_marker.publish(obstacles_array);
 
 }
 
@@ -204,6 +204,7 @@ int main(int argc, char** argv)
     joint_msg.position.push_back(0.0);
     joint_msg_pub.publish(joint_msg);
     
+    obstacles();
     
     while(ros::ok())
     {
@@ -217,7 +218,7 @@ int main(int argc, char** argv)
         loop_rate.sleep();
         timestep+=1;
 
-
+        transformStamped.header.stamp = ros::Time::now();
         transformStamped.transform.translation.x = x;
         transformStamped.transform.translation.y = y;
         q.setRPY(0, 0, theta);
@@ -228,7 +229,7 @@ int main(int argc, char** argv)
         br.sendTransform(transformStamped);
         ROS_DEBUG("x0: %f", x0);
         
-        obstacles();
+        
     
 
     }

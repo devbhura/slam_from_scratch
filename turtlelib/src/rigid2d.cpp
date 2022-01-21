@@ -36,6 +36,15 @@ turtlelib::Transform2D::Transform2D(Vector2D trans, double radians)
 
 }
 
+turtlelib::Vector2D turtlelib::normalize(turtlelib::Vector2D & v)
+{
+    double n = sqrt(v.x*v.x + v.y*v.y);
+    turtlelib::Vector2D newv;
+    newv.x = v.x/n;
+    newv.y = v.y/n;
+    return newv;
+}
+
 turtlelib::Vector2D turtlelib::Transform2D::operator()(turtlelib::Vector2D v) const
 {
     turtlelib::Vector2D newv;
@@ -141,15 +150,9 @@ std::istream & turtlelib::operator>>(std::istream & is, turtlelib::Transform2D &
 {
     turtlelib::Vector2D vector;
     double theta;
+    std::string s1, s2, s3;
 
-    std::cout << "deg: ";
-    is >> theta;
-    std::cout << " x: ";
-    is >> vector.x;
-    std::cout << " y: ";
-    is >> vector.y;
-
-    // is >> "deg:" >> theta >> "x:" >> vector.x >> "y:">> vector.y;
+    is >> s1 >> theta >> s2 >> vector.x >> s3 >> vector.y;
 
     theta = deg2rad(theta);
     tf = turtlelib::Transform2D(vector,theta);

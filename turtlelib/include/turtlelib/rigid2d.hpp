@@ -84,6 +84,9 @@ namespace turtlelib
         double ydot = 0.0;
     };
 
+    /// \brief Normalize a 2-Dimensional vector
+    /// \param v - the vector to be normalized
+    Vector2D normalize(Vector2D & v);
 
 
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]
@@ -145,8 +148,6 @@ namespace turtlelib
         /// \param twist - the twist to transform
         /// \return a twist in the new coordinate system
         Twist operator()(Twist twist) const;
-
-
 
         /// \brief invert the transformation
         /// \return the inverse transformation. 
