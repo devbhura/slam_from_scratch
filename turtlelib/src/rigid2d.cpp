@@ -36,12 +36,12 @@ turtlelib::Transform2D::Transform2D(Vector2D trans, double radians)
 
 }
 
-turtlelib::Vector2D turtlelib::normalize(turtlelib::Vector2D & v)
+turtlelib::Vector2D turtlelib::Vector2D::normalize() const
 {
-    double n = sqrt(v.x*v.x + v.y*v.y);
+    double n = sqrt(x*x + y*y);
     turtlelib::Vector2D newv;
-    newv.x = v.x/n;
-    newv.y = v.y/n;
+    newv.x = x/n;
+    newv.y = y/n;
     return newv;
 }
 

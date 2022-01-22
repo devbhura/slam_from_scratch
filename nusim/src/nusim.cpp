@@ -52,13 +52,14 @@ visualization_msgs::MarkerArray obstacles_array;
 std::vector<double> obstacles_x_arr, obstacles_y_arr, obstacles_theta_arr;
 ros::Publisher obstacle_marker;
 
+///\brief
+/// callback for reset service that resets the positon of the robot to the original position
+/// Input: None
+/// Output: TriggerResponse
 bool reset_callback(std_srvs::TriggerRequest& request, std_srvs::TriggerResponse& response)
 {
-    /* callback for reset service that resets the positon of the robot to the original position
-     * Input
-        * None
-     * Output
-        * true (boolean)
+    /* 
+     * 
     */
     timestep = 0.0;
     x = x0;
@@ -66,19 +67,18 @@ bool reset_callback(std_srvs::TriggerRequest& request, std_srvs::TriggerResponse
     theta = theta0;
 
 
-    return true;
+    return response.success;
 }
 
+///\brief
+/// callback for reset service that resets the positon of the robot to the original position
+/// Input:
+/// \param x - x position to set the robot to
+/// \param y - y position to set the robot to
+/// \param theta - theta: theta orientation to set the robot to
+/// Output: teleportResponse
 bool teleport_callback(nusim::teleport::Request& input, nusim::teleport::Response& response)
 {
-    /* callback for teleport services that sets the robot to the user defined position
-     * Input
-        * request.x: x position to set the robot to
-        * request.y: y position to set the robot to
-        * request.theta: theta orientation to set the robot to
-     * Output
-        * true (boolean)
-    */
 
     x = input.x;
     y = input.y;
@@ -87,14 +87,13 @@ bool teleport_callback(nusim::teleport::Request& input, nusim::teleport::Respons
 
 }
 
+///\brief
+/// function that sets the obstacle marker array and publishes
+/// Input: None
+/// Output: None
 void obstacles()
 {   
-    /* function that sets the obstacle marker array and publishes 
-     * Input  
-        * None
-     * Output
-        * None
-    */
+    
 
     obstacles_array.markers.resize(obstacles_x_arr.size());
 

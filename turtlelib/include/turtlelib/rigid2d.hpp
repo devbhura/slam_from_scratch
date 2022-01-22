@@ -61,6 +61,8 @@ namespace turtlelib
 
     static_assert(almost_equal(deg2rad(rad2deg(2.1)), 2.1), "deg2rad failed");
 
+    static_assert(almost_equal(deg2rad(rad2deg(2.1)), 2.1), "deg2rad failed");
+
     /// \brief A 2-Dimensional Vector
     struct Vector2D
     {
@@ -69,6 +71,10 @@ namespace turtlelib
 
         /// \brief the y coordinate
         double y = 0.0;
+
+        /// \brief Normalize a 2-Dimensional vector
+        /// \param v - the vector to be normalized
+        Vector2D normalize() const;
     };
 
     /// \brief A 2-Dimensional Twist
@@ -83,10 +89,6 @@ namespace turtlelib
         /// \brief the linear velocity in y
         double ydot = 0.0;
     };
-
-    /// \brief Normalize a 2-Dimensional vector
-    /// \param v - the vector to be normalized
-    Vector2D normalize(Vector2D & v);
 
 
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]

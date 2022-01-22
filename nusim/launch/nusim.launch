@@ -18,7 +18,7 @@
             <param name="robot_description" command="$(find xacro)/xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro' prefix:=$(arg color)"/>
             <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
             <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
-            <node name="rviz" pkg="rviz" type="rviz" args="-f world -d $(find nusim)/config/nusim.rviz"/>
+            <node name="rviz" pkg="rviz" type="rviz" args="-f world -d $(find nusim)/config/nusim.rviz" required="true"/>
             <node pkg="tf2_ros" type="static_transform_publisher" name="world2link" args="$(arg x) $(arg y) 0 0 0 0 1 world $(arg color)_base_footprint" />
         
         </group>

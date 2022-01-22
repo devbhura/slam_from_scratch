@@ -1,26 +1,33 @@
 <launch>
 
+    <arg name="setup" value="$(find nuturtle_description)/config/basic_all.rviz"/>
+
     <include file="$(find nuturtle_description)/launch/load.launch">
         <arg name="color" value="red"/>
         <arg name="x" value="1"/>
+        <arg name="robot_setup" value="$(arg setup)"/>
+        
 
     </include>
 
     <include file="$(find nuturtle_description)/launch/load.launch">
         <arg name="color" value="green"/>
         <arg name="y" value="1"/>
+        <arg name="robot_setup" value="$(arg setup)"/>
 
     </include>
 
     <include file="$(find nuturtle_description)/launch/load.launch">
         <arg name="color" value="blue"/>
         <arg name="x" value="-1"/>
+        <arg name="robot_setup" value="$(arg setup)"/>
 
     </include>
 
      <include file="$(find nuturtle_description)/launch/load.launch">
         <arg name="color" value="black"/>
         <arg name="y" value="-1"/>
+        <arg name="robot_setup" value="$(arg setup)"/>
 
     </include>
 
