@@ -127,14 +127,19 @@ std::istream & turtlelib::operator>>(std::istream & is, turtlelib::Vector2D & v)
 {
     // std::cout << "Enter vector [x y]:" << std::endl;
     char c = is.peek();
-    if(c==91)
+    if( c == '[' )
     {
-        c = is.get();
+        is.get();
     }
 
     is >> v.x >> v.y;
     // std::cout << "[" << v.x<<", "<< v.y<<"]\n";
-
+    char c1 = is.peek();
+    if( c1 == ']' )
+    {
+        is.get();
+    }
+    is.get();
     return is;
 
 }
@@ -153,6 +158,8 @@ std::istream & turtlelib::operator>>(std::istream & is, turtlelib::Transform2D &
     std::string s1, s2, s3;
 
     is >> s1 >> theta >> s2 >> vector.x >> s3 >> vector.y;
+
+    is.get();
 
     theta = deg2rad(theta);
     tf = turtlelib::Transform2D(vector,theta);
@@ -176,7 +183,7 @@ std::ostream & turtlelib::operator<<(std::ostream & os, const turtlelib::Twist &
     return os;
 }
 
-// Input a 2 dimensional vector
+// Input a 3 dimensional twist
 std::istream & turtlelib::operator>>(std::istream & is, turtlelib::Twist & twist)
 {
     // std::cout << "Enter twist [thetadot xdot ydot]:" << std::endl;
@@ -188,7 +195,12 @@ std::istream & turtlelib::operator>>(std::istream & is, turtlelib::Twist & twist
 
     is >> twist.thetadot >> twist.xdot >> twist.ydot;
     // std::cout << "[" << twist.thetadot<<", "<<twist.xdot<<", "<< twist.ydot<<"]\n";
-
+    char c1 = is.peek();
+    if( c1 == ']' )
+    {
+        is.get();
+    }
+    is.get();
     return is;
 
 }
