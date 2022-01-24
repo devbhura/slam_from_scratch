@@ -1,6 +1,7 @@
-/// \brief 
+/// \file
+/// \brief launches turtlebot3 and obstacles in rviz scene for visualization
 /**
- * PARAMETERS
+ * PARAMETERS:
     * timestep (double): tracks the current time step of the simulation
     * x0 (double): initial x position of the robot loaded
     * yinit (double): initial y position of the robot loaded
@@ -15,16 +16,16 @@
     * obstacles_theta_arr (vector<double>): loads the theta coordinates of all the obstacles in an array
     * loop_rate (ROS::Rate): defines the rate of the while loop
     * r (int): takes the rate from the parameters
- * BROADCASTERS
+ * BROADCASTERS:
     * br: Broadcasts transform from world frame to red_base_footprint frame 
- * PUBLISHERS
+ * PUBLISHERS:
     * obstacle_marker: publishes the obstacle marker 
     * pub: publishes the timestep
     * joint_msg_pub: publishes the joint states
- * SERVICES
+ * SERVICES:
     *  reset: resets the position of the turtlebot3 to the original position
     *  teleport: sets the position of the turtlebot3 to a new user specified position
- * SUBSCRIBERS
+ * SUBSCRIBERS:
  */
 
 
