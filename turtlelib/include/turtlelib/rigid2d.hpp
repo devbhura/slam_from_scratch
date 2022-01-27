@@ -90,6 +90,7 @@ namespace turtlelib
         double ydot = 0.0;
     };
 
+    double normalize_angle(double angle);
 
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]
     /// os - stream to output to

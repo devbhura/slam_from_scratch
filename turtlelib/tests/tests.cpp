@@ -1,7 +1,6 @@
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include "catch_ros/catch.hpp"
 #include "../include/turtlelib/rigid2d.hpp"
-
+#include <sstream>
 #include <cmath>
 
 TEST_CASE( "Test for rotation", "rotation" ) {// Devesh Bhura
