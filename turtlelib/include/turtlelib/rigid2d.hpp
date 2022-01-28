@@ -75,6 +75,42 @@ namespace turtlelib
         /// \brief Normalize a 2-Dimensional vector
         /// \param v - the vector to be normalized
         Vector2D normalize() const;
+
+        /// \brief add this vector with another and store the result 
+        /// in this object
+        /// \param v_rhs - the first vector to apply
+        /// \return a reference to the newly transformed operator
+        Vector2D & operator+=(const Vector2D & v_rhs);
+
+        /// \brief subtract this vector with another and store the result 
+        /// in this object
+        /// \param v_rhs - the first vector to apply
+        /// \return a reference to the newly transformed operator
+        Vector2D & operator-=(const Vector2D & v_rhs);
+
+        /// \brief multiply this vector with another and store the result 
+        /// in this object
+        /// \param scalar - the scalar to apply
+        /// \return a reference to the newly transformed operator
+        Vector2D & operator*=(const double scalar);
+
+        /// \brief dot multiplication of this vector with another and return the result
+        /// \param v1 - the first vector to multiply with
+        /// \param v2 - the second vector to mutiply with
+        /// \return a double scalar value
+        double dot(Vector2D &v1, Vector2D &v2) const;
+
+        /// \brief compute the magnitude of the vector
+        /// \param v - the vector to compute the magnitude of
+        /// \return a scalar magnitude
+        double magnitude(Vector2D &v) const;
+
+        /// \brief compute the angle between 2 vectors
+        /// \param v1 - the first vector to compute the angle with
+        /// \param v2 - the second vector to compute the angle with
+        /// \return the angle value
+        double angle(Vector2D &v1, Vector2D &v2) const;
+
     };
 
     /// \brief A 2-Dimensional Twist
