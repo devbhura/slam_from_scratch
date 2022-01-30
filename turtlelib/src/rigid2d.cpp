@@ -68,6 +68,27 @@ double Vector2D::angle(Vector2D &v1, Vector2D &v2) const
     double theta = acos(dot(v1,v2)/(magnitude(v1)+magnitude(v2)));
     return theta;
 }
+// Vector2D related oprators
+Vector2D operator+(Vector2D lhs, const Vector2D & rhs)
+{
+    lhs += rhs;
+    return lhs;
+    
+}
+
+Vector2D operator-(Vector2D lhs, const Vector2D & rhs)
+{
+    lhs -= rhs;
+    return lhs;
+    
+}
+
+Vector2D operator*(Vector2D lhs, const double & scalar)
+{
+    lhs *= scalar;
+    return lhs;
+    
+}
 
 // ----- Transform2D class --------
 
@@ -166,6 +187,33 @@ double Transform2D::rotation() const
     double angle = theta;
 
     return angle;
+}
+
+
+
+// --------------------------------------------------------
+// Integrate a twist to give the transformation in the body frame
+Transform2D integrate_twist(Twist V)
+{
+
+    Vector2D v_s;
+
+    if(V.thetadot==0.0)
+    {
+        v_s.x = V.xdot;
+        v_s.y = V.ydot;
+        Transform2D Tbb_hat(v_s);
+        return Tbb_hat;
+    }
+
+    double theta_s = V.thetadot;
+    v_s.x = V.ydot/theta_s;
+    v_s.y = -V.xdot/theta_s;
+
+    Transform2D Tbs(v_s), Tss_hat(theta_s), Tbb_hat; 
+    Tbb_hat = Tbs*Tss_hat*Tbs;
+    return Tbb_hat;
+
 }
 
 // Output a 2 dimensional vector as [xcomponent ycomponent]

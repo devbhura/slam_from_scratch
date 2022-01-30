@@ -113,6 +113,25 @@ namespace turtlelib
 
     };
 
+    /// \brief Add two vectors together, returning their composition
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the composition of the two vectors
+    Vector2D operator+(Vector2D lhs, const Vector2D & rhs);
+
+    /// \brief Subtract two vectors from each other
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the composition of the two vectors
+    Vector2D operator-(Vector2D lhs, const Vector2D & rhs);
+
+    // \brief Multiply a vector with a scalar 
+    /// \param lhs - the left hand operand
+    /// \param scalar - the right hand operand
+    /// \return the multiplied vector
+    Vector2D operator*(Vector2D lhs, const double & scalar);
+
+
     /// \brief A 2-Dimensional Twist
     struct Twist
     {
@@ -126,6 +145,9 @@ namespace turtlelib
         double ydot = 0.0;
     };
 
+    /// \brief normalize an angle
+    /// \param angle - angle to normalized
+    /// \return normalized angle in the range (-PI, PI]
     double normalize_angle(double angle);
 
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]
@@ -210,8 +232,13 @@ namespace turtlelib
         /// for a description
         friend std::ostream & operator<<(std::ostream & os, const Transform2D & tf);
 
+
     };
 
+    /// \brief integrate a twist given in its body frame
+    /// \param V - the twist to be evaluated
+    /// \return a transformation matrix
+    Transform2D integrate_twist(Twist V);
 
     /// \brief should print a human readable version of the transform:
     /// An example output:

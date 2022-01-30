@@ -204,3 +204,84 @@ TEST_CASE("ostream Transform output","[Transform2D]"){// James Avtges
 
     REQUIRE(transformOut.str() == "deg: 6.1 x: 3.2 y: 4\n");
 }
+
+TEST_CASE("Normalize Angle","[Normalize angle]"){// Devesh Bhura
+    
+    double norm_ang;
+    double PI = turtlelib::PI;
+    
+    norm_ang = turtlelib::normalize_angle(PI);
+
+    REQUIRE(turtlelib::almost_equal(norm_ang, PI, 0.01));
+
+    norm_ang = turtlelib::normalize_angle(-PI);
+    REQUIRE(turtlelib::almost_equal(norm_ang, PI, 0.01));
+
+    norm_ang = turtlelib::normalize_angle(0);
+    REQUIRE(turtlelib::almost_equal(norm_ang, 0, 0.01));
+
+    norm_ang = turtlelib::normalize_angle(-PI/4);
+    REQUIRE(turtlelib::almost_equal(norm_ang, -PI/4, 0.01));
+
+    norm_ang = turtlelib::normalize_angle(3*PI/2);
+    REQUIRE(turtlelib::almost_equal(norm_ang, -PI/2, 0.01));
+
+    norm_ang = turtlelib::normalize_angle(-5*PI/2);
+    REQUIRE(turtlelib::almost_equal(norm_ang, -PI/2, 0.01));
+
+}
+
+TEST_CASE("Integrate Twist (pure translational)","[Integrate Twist]"){// Devesh Bhura
+    
+    turtlelib::Twist V;
+    V.xdot = 1;
+    V.ydot = 1;
+
+    turtlelib::Transform2D T;
+    T = turtlelib::integrate_twist(V);
+    turtlelib::Vector2D v0;
+    v0 = T.translation();
+    double ang = T.rotation();
+
+    REQUIRE(turtlelib::almost_equal(v0.x, V.xdot, 0.01));
+    REQUIRE(turtlelib::almost_equal(v0.y, V.ydot, 0.01));
+    REQUIRE(turtlelib::almost_equal(ang, 0.0, 0.01));
+
+}
+
+TEST_CASE("Integrate Twist (pure rotational)","[Integrate Twist]"){// Devesh Bhura
+    
+    turtlelib::Twist V;
+    V.thetadot = 1;
+
+    turtlelib::Transform2D T;
+    T = turtlelib::integrate_twist(V);
+    turtlelib::Vector2D v0;
+    v0 = T.translation();
+    double ang = T.rotation();
+
+    REQUIRE(turtlelib::almost_equal(v0.x, 0.0, 0.01));
+    REQUIRE(turtlelib::almost_equal(v0.y, 0.0, 0.01));
+    REQUIRE(turtlelib::almost_equal(ang, V.thetadot, 0.01));
+
+}
+
+TEST_CASE("Integrate Twist (both translational and rotational)","[Integrate Twist]"){// Devesh Bhura
+    
+    turtlelib::Twist V;
+    V.xdot = 1;
+    V.ydot = 1;
+    double PI = turtlelib::PI;
+    V.thetadot = PI;
+
+    turtlelib::Transform2D T;
+    T = turtlelib::integrate_twist(V);
+    turtlelib::Vector2D v0;
+    v0 = T.translation();
+    double ang = T.rotation();
+
+    REQUIRE(turtlelib::almost_equal(v0.x, 0.0, 0.01));
+    REQUIRE(turtlelib::almost_equal(v0.y, 0.0, 0.01));
+    REQUIRE(turtlelib::almost_equal(ang, PI, 0.01));
+
+}
