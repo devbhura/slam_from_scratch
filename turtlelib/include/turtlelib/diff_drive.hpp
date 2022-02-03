@@ -14,7 +14,26 @@ namespace turtlelib
         double left_phi=0.0;
         double right_phi=0.0;
 
+        /// \brief subtract this phi with another and store the result 
+        /// in this object
+        /// \param phi_new - the first vector to apply
+        /// \return a reference to the newly transformed operator
+        WheelPhi & operator-=(const WheelPhi & phi_new);
+
     };
+
+    struct Config
+    {
+        double x = 0.0;
+        double y = 0.0;
+        double phi = 0.0;
+    };
+
+    /// \brief Subtract two phis from each other
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the composition of the two vectors
+    Vector2D operator-(WheelPhi lhs, const WheelPhi & rhs);
 
     class DiffDrive
     {
@@ -24,7 +43,7 @@ namespace turtlelib
 
             WheelPhi phi;
 
-            Transform2D T;
+            Config q;
 
 
         public:
@@ -33,11 +52,12 @@ namespace turtlelib
 
             explicit DiffDrive(double dist, double radius);
 
-            explicit DiffDrive(double dist, double radius, Transform2D transform);
+            explicit DiffDrive(double dist, double radius, WheelPhi phihat, Config qhat);
 
-            Twist getTwist(Vector2D u);
+            Config ForwardKin(WheelPhi newphi);
 
-            Vector2D getwheelvel()
+            Vector2D InvKIn(Twist V); 
+
 
     };
 }

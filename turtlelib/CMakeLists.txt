@@ -53,6 +53,7 @@ include_directories(
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
    src/rigid2d.cpp
+   src/diff_drive.cpp
 )
 
 
@@ -140,6 +141,7 @@ if(CATKIN_ENABLE_TESTING)
     catch_add_test(my_test
     tests/tests.cpp
     src/rigid2d.cpp
+    src/diff_drive.cpp
     )
 
     target_link_libraries(my_test

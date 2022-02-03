@@ -1,5 +1,6 @@
 #include "catch_ros/catch.hpp"
 #include "../include/turtlelib/rigid2d.hpp"
+#include "../include/turtlelib/diff_drive.hpp"
 #include <sstream>
 #include <cmath>
 
@@ -283,5 +284,61 @@ TEST_CASE("Integrate Twist (both translational and rotational)","[Integrate Twis
     REQUIRE(turtlelib::almost_equal(v0.x, 0.0, 0.01));
     REQUIRE(turtlelib::almost_equal(v0.y, 0.0, 0.01));
     REQUIRE(turtlelib::almost_equal(ang, PI, 0.01));
+
+}
+
+TEST_CASE("DiffDrive (Linear Drive forward)","[Linear Forward Kinematics]"){// Devesh Bhura
+    
+    turtlelib::WheelPhi newphi, phi;
+    turtlelib::Config q, qnew;
+
+    double d,r;
+    d = 0.08;
+    r = 0.033;
+    phi.left_phi = 0.0;
+    phi.right_phi = 0.0;
+    q.x = 0.0;
+    q.phi = 0.0;
+    q.y = 0.0;
+
+    turtlelib::DiffDrive tur(d, r, phi, q);
+
+    newphi.right_phi = 0.2;
+    newphi.left_phi = 0.2;
+
+    qnew = tur.ForwardKin(newphi);
+
+
+    REQUIRE(turtlelib::almost_equal(qnew.x, 0.0066, 0.0001));
+    REQUIRE(turtlelib::almost_equal(qnew.y, 0.0000, 0.0001));
+    REQUIRE(turtlelib::almost_equal(qnew.phi, 0.0000, 0.0001));
+
+}
+
+TEST_CASE("DiffDrive (Rot Drive forward)","[Rotational Forward Kinematics]"){// Devesh Bhura
+    
+    turtlelib::WheelPhi newphi, phi;
+    turtlelib::Config q, qnew;
+
+    double d,r;
+    d = 0.08;
+    r = 0.033;
+    // phi.left_phi = 0.0;
+    // phi.right_phi = 0.0;
+    // q.x = 0.0;
+    // q.phi = 0.0;
+    // q.y = 0.0;
+
+    turtlelib::DiffDrive tur(d, r, phi, q);
+
+    newphi.right_phi = 0.2;
+    newphi.left_phi = 0.2;
+
+    qnew = tur.ForwardKin(newphi);
+
+
+    REQUIRE(turtlelib::almost_equal(qnew.x, 0.0066, 0.0001));
+    REQUIRE(turtlelib::almost_equal(qnew.y, 0.0000, 0.0001));
+    REQUIRE(turtlelib::almost_equal(qnew.phi, 0.0000, 0.0001));
 
 }

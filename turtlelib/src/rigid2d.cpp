@@ -68,7 +68,7 @@ double Vector2D::angle(Vector2D &v1, Vector2D &v2) const
     double theta = acos(dot(v1,v2)/(magnitude(v1)+magnitude(v2)));
     return theta;
 }
-// Vector2D related oprators
+// Vector2D related operators
 Vector2D operator+(Vector2D lhs, const Vector2D & rhs)
 {
     lhs += rhs;
