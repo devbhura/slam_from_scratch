@@ -315,6 +315,30 @@ TEST_CASE("DiffDrive (Linear Drive forward)","[Linear Forward Kinematics]"){// D
 
 }
 
+TEST_CASE("DiffDrive (Linear Drive forward from Twist)","[Linear Inverse Kinematics]"){// Devesh Bhura
+    
+    turtlelib::WheelPhi phi;
+    turtlelib::Config q;
+    turtlelib::Twist V;
+    turtlelib::Vector2D v;
+
+
+    double d,r;
+    d = 0.08;
+    r = 0.033;
+
+    turtlelib::DiffDrive tur(d, r, phi, q);
+
+    V.xdot = 1.0;
+
+    v = tur.InvKin(V);
+
+
+    REQUIRE(turtlelib::almost_equal(v.x, 1.0, 0.0001));
+    REQUIRE(turtlelib::almost_equal(v.y, 1.0, 0.0001));
+
+}
+
 TEST_CASE("DiffDrive (Rot Drive forward)","[Rotational Forward Kinematics]"){// Devesh Bhura
     
     turtlelib::WheelPhi newphi, phi;
@@ -323,22 +347,111 @@ TEST_CASE("DiffDrive (Rot Drive forward)","[Rotational Forward Kinematics]"){// 
     double d,r;
     d = 0.08;
     r = 0.033;
-    // phi.left_phi = 0.0;
-    // phi.right_phi = 0.0;
-    // q.x = 0.0;
-    // q.phi = 0.0;
-    // q.y = 0.0;
+    
 
     turtlelib::DiffDrive tur(d, r, phi, q);
 
     newphi.right_phi = 0.2;
-    newphi.left_phi = 0.2;
+    newphi.left_phi = 0;
 
     qnew = tur.ForwardKin(newphi);
 
 
-    REQUIRE(turtlelib::almost_equal(qnew.x, 0.0066, 0.0001));
+    REQUIRE(turtlelib::almost_equal(qnew.x, 0.0033, 0.0001));
     REQUIRE(turtlelib::almost_equal(qnew.y, 0.0000, 0.0001));
-    REQUIRE(turtlelib::almost_equal(qnew.phi, 0.0000, 0.0001));
+    REQUIRE(turtlelib::almost_equal(qnew.phi, 0.04125, 0.0001));
 
+}
+
+TEST_CASE("DiffDrive (Rot Drive forward from Twist)","[Rotational Inverse Kinematics]"){// Devesh Bhura
+    
+    turtlelib::WheelPhi phi;
+    turtlelib::Config q;
+    turtlelib::Twist V;
+    turtlelib::Vector2D v;
+
+
+    double d,r;
+    d = 0.08;
+    r = 0.033;
+
+    turtlelib::DiffDrive tur(d, r, phi, q);
+
+    V.thetadot = 1.0;
+
+    v = tur.InvKin(V);
+
+
+    REQUIRE(turtlelib::almost_equal(v.x, -2.42, 0.01));
+    REQUIRE(turtlelib::almost_equal(v.y, 2.42, 0.01));
+    
+}
+
+TEST_CASE("DiffDrive (Rot Drive Circle)","[Circle Forward Kinematics]"){// Devesh Bhura
+    
+    turtlelib::WheelPhi phi;
+    turtlelib::Config q;
+    turtlelib::Twist V;
+    turtlelib::Vector2D v;
+
+
+    double d,r;
+    d = 0.08;
+    r = 0.033;
+
+    turtlelib::DiffDrive tur(d, r, phi, q);
+
+    V.thetadot = 1.0;
+    V.xdot = 1.0;
+
+    v = tur.InvKin(V);
+
+
+    REQUIRE(turtlelib::almost_equal(v.x, -1.42, 0.01));
+    REQUIRE(turtlelib::almost_equal(v.y, 3.42, 0.01));
+    
+}
+
+TEST_CASE("DiffDrive (Rot Drive Circle from Twist)","[Circle Inverse Kinematics]"){// Devesh Bhura
+    
+    turtlelib::WheelPhi newphi, phi;
+    turtlelib::Config q, qnew;
+
+    double d,r;
+    d = 0.08;
+    r = 0.033;
+
+    turtlelib::DiffDrive tur(d, r, phi, q);
+
+    newphi.right_phi = 0.2;
+    newphi.left_phi = -0.1;
+
+    qnew = tur.ForwardKin(newphi);
+
+    REQUIRE(turtlelib::almost_equal(qnew.x, 0.00165, 0.0001));
+    REQUIRE(turtlelib::almost_equal(qnew.y, 0.00, 0.01));
+    REQUIRE(turtlelib::almost_equal(qnew.phi, 0.06187, 0.0001));
+    
+}
+
+TEST_CASE("DiffDrive (Invalid Twist)","[Invalid Twist]"){// Devesh Bhura
+    
+    turtlelib::WheelPhi phi;
+    turtlelib::Config q;
+    turtlelib::Twist V;
+    turtlelib::Vector2D v;
+
+
+    double d,r;
+    d = 0.08;
+    r = 0.033;
+
+    turtlelib::DiffDrive tur(d, r, phi, q);
+
+    V.thetadot = 1.0;
+    V.xdot = 1.0;
+    V.ydot = 2.0;
+
+    CHECK_THROWS(v = tur.InvKin(V));
+    
 }

@@ -56,7 +56,7 @@ namespace turtlelib
 
             Config ForwardKin(WheelPhi newphi);
 
-            Vector2D InvKIn(Twist V); 
+            Vector2D InvKin(Twist V); 
 
 
     };

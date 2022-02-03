@@ -67,7 +67,7 @@ namespace turtlelib
     u.y =  - phi.right_phi + newphi.right_phi;
     Twist V;
 
-    V.thetadot = -r*u.x/2*d + r*u.y/2*d;
+    V.thetadot = -r*u.x/(2*d) + r*u.y/(2*d);
     V.xdot = r*u.x/2 + r*u.y/2;
     V.ydot = 0;
 
@@ -79,11 +79,11 @@ namespace turtlelib
     return q;
  }
 
- Vector2D DiffDrive::InvKIn(Twist V)
+ Vector2D DiffDrive::InvKin(Twist V)
  {
-    if(V.ydot!=0.0)
+    if(!almost_equal(V.ydot,0.0, 0.01))
     {
-        std::logic_error("Invalid Twist!");
+        throw std::logic_error("Invalid Twist!");
     }
     else{
     Vector2D u;
