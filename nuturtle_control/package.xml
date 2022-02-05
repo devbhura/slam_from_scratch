@@ -50,6 +50,15 @@
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <exec_depend>nuturtlebot_msgs</exec_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>nuturtlebot_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_export_depend>sensor_msgs</build_export_depend>
+  <build_export_depend>geometry_msgs</build_export_depend>
+  <build_export_depend>nuturtlebot_msgs</build_export_depend>
+  <build_export_depend>roscpp</build_export_depend>
+
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
