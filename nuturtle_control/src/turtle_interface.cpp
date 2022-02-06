@@ -24,12 +24,12 @@
 
 static int motor_cmd_to_radsec;
 static int encoder_ticks_to_rad;
-turtlelib::Config q_old, q_new;
-turtlelib::WheelPhi phi_old, phi_new;
-turtlelib::Twist V_applied;
-turtlelib::DiffDrive diff_drive;
+static turtlelib::Config q_old, q_new;
+static turtlelib::WheelPhi phi_old, phi_new;
+static turtlelib::Twist V_applied;
+static turtlelib::DiffDrive diff_drive;
 static double dist, radius;
-turtlelib::Vector2D u;
+static turtlelib::Vector2D u;
 ros::Publisher wheel_cmd_pub, joint_state_pub;
 
 void vel_sub_callback(const geometry_msgs::Twist& msg)

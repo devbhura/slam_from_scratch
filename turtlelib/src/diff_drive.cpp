@@ -1,4 +1,4 @@
-#include "../include/turtlelib/diff_drive.hpp"
+#include "turtlelib/diff_drive.hpp"
 #include <iostream>
 #include <math.h> 
 #include <stdexcept>
@@ -7,24 +7,24 @@ namespace turtlelib
 {
 
 // Struct WheelPhi
- WheelPhi & WheelPhi::operator-=(const WheelPhi & phi_new)
- {
-    left_phi -= phi_new.left_phi;
-    right_phi -= phi_new.right_phi;
+//  WheelPhi & WheelPhi::operator-=(const WheelPhi & phi_new)
+//  {
+//     left_phi -= phi_new.left_phi;
+//     right_phi -= phi_new.right_phi;
     
-    return *this;
- }
+//     return *this;
+//  }
 
  // Struct related Operator - 
- Vector2D operator-(WheelPhi lhs, const WheelPhi & rhs)
- {
-    lhs-=rhs;
-    Vector2D v;
-    v.x = lhs.left_phi;
-    v.y = lhs.right_phi;
+//  Vector2D operator-(WheelPhi lhs, const WheelPhi & rhs)
+//  {
+//     lhs-=rhs;
+//     Vector2D v;
+//     v.x = lhs.left_phi;
+//     v.y = lhs.right_phi;
 
-    return v;
- }
+//     return v;
+//  }
 
 // Diff Drive
  DiffDrive::DiffDrive()
@@ -94,5 +94,15 @@ namespace turtlelib
     return u;
     }
  }
+
+ Config DiffDrive::getConfig() const
+{
+    
+    Config q_new;
+    q_new.x = q.x;
+    q_new.y = q.y;
+    q_new.phi = q.phi;
+    return q_new;
+}
 
 }
