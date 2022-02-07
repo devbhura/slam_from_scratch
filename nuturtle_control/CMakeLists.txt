@@ -62,6 +62,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
    FILES
    set_pose.srv
+   control.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -74,7 +75,7 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  std_msgs# Or other packages containing msgs
+  std_msgs # Or other packages containing msgs
 #   sensor_msgs
 #   nuturtlebot_msgs
 )
@@ -153,6 +154,9 @@ add_dependencies(turtle_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_E
 add_executable(odometry src/odometry.cpp)
 add_dependencies(odometry ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_executable(circle src/circle.cpp)
+add_dependencies(circle ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -173,6 +177,11 @@ target_link_libraries(odometry
   turtlelib
 )
 
+target_link_libraries(circle
+  ${catkin_LIBRARIES}
+  turtlelib
+)
+
 #############
 ## Install ##
 #############
@@ -189,13 +198,13 @@ target_link_libraries(odometry
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS odometry
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+# install(TARGETS odometry
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
-install(TARGETS turtle_interface
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+# install(TARGETS turtle_interface
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html

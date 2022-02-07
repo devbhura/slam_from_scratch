@@ -9,7 +9,7 @@
     <arg name="y" default="0"/>
     <arg name="z" default="0"/>
 
-    <rosparam command="load" file="$(find nusim)/config/basic_world.yaml" ns="nusim_node"/>
+    <rosparam command="load" file="$(find nusim)/config/basic_world.yaml" ns="nusim"/>
 
     <group if="$(arg use_rviz)">
 

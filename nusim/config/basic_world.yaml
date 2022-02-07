@@ -6,3 +6,5 @@ theta0: 1.57
 obstacles_x_arr: [-0.6, 0.6, 0.6]
 obstacles_y_arr: [-0.8, -0.8, 0.8]
 obstacles_theta_arr: [0, 0, 0]
+x_length: 5.0
+y_length: 5.0

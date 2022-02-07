@@ -42,18 +42,20 @@
 #include "visualization_msgs/Marker.h"
 #include "visualization_msgs/MarkerArray.h"
 #include "ros/console.h"
+#include "nuturtlebot_msgs/WheelCommands.h"
+#include "nuturtlebot_msgs/SensorData.h"
 
 
 static double timestep;
 static double x, x0;
 static double y, yinit; 
 static double theta, theta0;
-static double obs_radius;
-visualization_msgs::MarkerArray obstacles_array;
-std::vector<double> obstacles_x_arr, obstacles_y_arr, obstacles_theta_arr;
-ros::Publisher obstacle_marker;
+static double obs_radius, x_length, y_length;
+static visualization_msgs::MarkerArray obstacles_array, wall_array;
+static std::vector<double> obstacles_x_arr, obstacles_y_arr, obstacles_theta_arr, wall_x_arr, wall_y_arr;
+static ros::Publisher obstacle_marker, wall_marker;
 
-///\brief
+/// \brief
 /// callback for reset service that resets the positon of the robot to the original position
 /// Input: None
 /// Output: TriggerResponse
@@ -136,7 +138,66 @@ void obstacles()
 
 }
 
+// void walls()
+// {
+//     wall_x_arr.resize(4);
+//     wall_x_arr.at(0) = x_length/2; 
+//     wall_x_arr.at(1) = -x_length/2; 
+//     wall_x_arr.at(2) = 0; 
+//     wall_x_arr.at(3) = 0; 
 
+//     wall_y_arr.resize(4);
+//     wall_y_arr.at(0) = 0;
+//     wall_y_arr.at(1) = 0;
+//     wall_y_arr.at(2) = y_length/2;
+//     wall_y_arr.at(3) = -y_length/2;
+
+//     wall_array.markers.resize(4);
+
+//     for (int i = 0; i<2; i++)
+//     {
+        
+//         wall_array.markers[i].header.frame_id = "world";
+//         wall_array.markers[i].header.stamp = ros::Time::now();
+//         wall_array.markers[i].id = i;
+
+//         wall_array.markers[i].type = visualization_msgs::Marker::CUBE;
+//         wall_array.markers[i].action = visualization_msgs::Marker::ADD;
+
+//         wall_array.markers[i].pose.position.x = wall_x_arr[i];
+//         wall_array.markers[i].pose.position.y = wall_y_arr[i];
+//         wall_array.markers[i].pose.position.z = 0.0;
+
+//         tf2::Quaternion q_obs;
+//         q_obs.setRPY(0, 0,0);
+
+//         wall_array.markers[i].pose.orientation.x = q_obs.x();
+//         wall_array.markers[i].pose.orientation.y = q_obs.y();
+//         wall_array.markers[i].pose.orientation.z = q_obs.z();
+//         wall_array.markers[i].pose.orientation.w = q_obs.w();
+
+//         wall_array.markers[i].scale.x = 2*wall_y_arr[i] + 0.25;
+//         wall_array.markers[i].scale.y = 2*wall_y_arr[i] + 0.25;
+//         wall_array.markers[i].scale.z = 0.25;
+
+
+//         wall_array.markers[i].color.r = 0;
+//         wall_array.markers[i].color.g = 1;
+//         wall_array.markers[i].color.b = 0;
+//         wall_array.markers[i].color.a = 1;
+
+//     }
+
+//    wall_marker.publish(wall_array);
+// }
+
+bool sub_wheel_callback(nuturtlebot_msgs::WheelCommands& input)
+{
+    
+
+    return true;
+
+}
 
 int main(int argc, char** argv)
 {
@@ -148,6 +209,8 @@ int main(int argc, char** argv)
     // define variables
     sensor_msgs::JointState joint_msg;
     
+    // define subscribers
+    ros::Subscriber sub_wheel = red.subscribe("/wheel_cmd", 1, sub_wheel_callback);
 
     // define services
     ros::ServiceServer reset = nh.advertiseService("reset",  reset_callback);
@@ -157,7 +220,7 @@ int main(int argc, char** argv)
     ros::Publisher pub = nh.advertise<std_msgs::UInt64>("timestep", 100);
     ros::Publisher joint_msg_pub = red.advertise<sensor_msgs::JointState>("joint_states", 1);
     obstacle_marker = obstacle.advertise<visualization_msgs::MarkerArray>("obs", 1, true);
-    
+    wall_marker = obstacle.advertise<visualization_msgs::MarkerArray>("wall", 1, true);
 
 
     // variables from the parameter
@@ -171,6 +234,11 @@ int main(int argc, char** argv)
     nh.getParam("obstacles_y_arr", obstacles_y_arr);
     nh.getParam("obstacles_theta_arr", obstacles_theta_arr);
     nh.param("obs_radius",obs_radius,0.025);
+    nh.param("x_length", x_length, 5.0);
+    nh.param("y_length", y_length, 5.0);
+
+    
+
 
     ros::Rate loop_rate(r);
 
@@ -204,7 +272,8 @@ int main(int argc, char** argv)
     joint_msg.position.push_back(0.0);
     joint_msg_pub.publish(joint_msg);
     
-    obstacles();
+    
+    // walls();
     
     while(ros::ok())
     {
@@ -229,6 +298,7 @@ int main(int argc, char** argv)
         br.sendTransform(transformStamped);
         ROS_DEBUG("x0: %f", x0);
         
+        obstacles();
         
     
 
