@@ -23,6 +23,7 @@
 #include "tf2/LinearMath/Quaternion.h"
 #include "turtlelib/diff_drive.hpp"
 #include "turtlelib/rigid2d.hpp"
+#include "nuturtle_control/set_pose.h"
 
 static ros::Subscriber joint_state_sub;
 static ros::Publisher odom_pub;
@@ -78,7 +79,20 @@ void publish_topics()
     transformStamped.transform.rotation.w = quat.w();
 
     br.sendTransform(transformStamped);
-    
+
+
+}
+
+bool set_pose_callback(nuturtle_control::set_pose::Request& input, nuturtle_control::set_pose::Response& response)
+{
+
+    qhat.x = input.x;
+    qhat.y = input.y;
+    qhat.phi = input.phi;
+    phi.left_phi = 0.0;
+    phi.right_phi = 0.0;
+    diff_drive = turtlelib::DiffDrive(dist, radius, phi, qhat);
+    return true;
 
 }
 
@@ -104,6 +118,8 @@ int main(int argc, char** argv)
     // Assign the publisher odom
     odom_pub = nh.advertise<nav_msgs::Odometry>("/odom", 10);
 
+    //Define services
+    ros::ServiceServer set_pose = nh.advertiseService("set_pose", set_pose_callback);
 
     // Odom message
     odom.header.frame_id = body_id;

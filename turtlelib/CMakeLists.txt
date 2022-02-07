@@ -17,6 +17,7 @@ find_package(catkin
 REQUIRED COMPONENTS
 roscpp
 catch_ros
+
 )
 
 ## System dependencies are found with CMake's conventions
@@ -36,6 +37,7 @@ catkin_package(
  LIBRARIES ${PROJECT_NAME}
  CATKIN_DEPENDS 
  roscpp
+ 
 #  DEPENDS system_lib
 )
 

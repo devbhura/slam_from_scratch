@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
     sensor_msgs
     geometry_msgs
     tf2_ros
+    std_msgs
+    message_generation
 )
 
 
@@ -57,11 +59,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+   FILES
+   set_pose.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -71,12 +72,12 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   geometry_msgs  # Or other packages containing msgs
+generate_messages(
+  DEPENDENCIES
+  std_msgs# Or other packages containing msgs
 #   sensor_msgs
 #   nuturtlebot_msgs
-# )
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -116,6 +117,9 @@ catkin_package(
  sensor_msgs
  nuturtlebot_msgs
  tf2_ros
+ message_runtime
+ std_msgs
+
 #  DEPENDS system_lib
 )
 
@@ -185,9 +189,13 @@ target_link_libraries(odometry
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-# install(TARGETS ${PROJECT_NAME}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(TARGETS odometry
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(TARGETS turtle_interface
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
