@@ -4,20 +4,25 @@
 
     <arg name="use_rviz" default="true"/>
     <arg name="use_jsp" default="false"/>
+
     <arg name="color" default="red"/>
     <arg name="x" default="0"/>
     <arg name="y" default="0"/>
     <arg name="z" default="0"/>
 
     <rosparam command="load" file="$(find nusim)/config/basic_world.yaml" ns="nusim"/>
+    <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" ns="nusim"/>
 
     <group if="$(arg use_rviz)">
 
         
         <group ns="$(arg color)">
             <param name="robot_description" command="$(find xacro)/xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro' prefix:=$(arg color)"/>
-            <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
-            <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+            <node if="$(eval arg('use_jsp') == 'true')" name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+            <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+                <!-- <remap from="/red/joint_states" to="/joint_states"/>
+                <remap from="/red/sensor_data" to="/sensor_data"/> -->
+            </node>
             <node name="rviz" pkg="rviz" type="rviz" args="-f world -d $(find nusim)/config/nusim.rviz" required="true"/>
             <node pkg="tf2_ros" type="static_transform_publisher" name="world2link" args="$(arg x) $(arg y) 0 0 0 0 1 world $(arg color)_base_footprint" />
         

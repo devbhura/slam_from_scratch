@@ -1,0 +1,22 @@
+<launch>
+
+    <arg name="cmd_src" default="circle"/>
+    <arg name="robot" default="nusim"/>
+
+    <remap from="/joint_states" to="/red/joint_states"/>
+    <remap from="/sensor_data" to="/red/sensor_data"/>
+
+    <rosparam command="load" file="$(find nuturtle_control)/config/odom_param.yaml"/>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="odom_broadcaster" args="0 0 0 0 0 0 1 world odom" />
+
+    <node name="odometry" pkg="nuturtle_control" type="odometry"/>
+    <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface"/>
+
+    <node if="$(eval arg('cmd_src') == 'circle')" name="circle" pkg="nuturtle_control" type="circle"/>
+
+    <include file="$(find nusim)/launch/nusim.launch">
+         <!-- <arg name="use_jsp" value="true"/> -->
+    </include>
+
+</launch>

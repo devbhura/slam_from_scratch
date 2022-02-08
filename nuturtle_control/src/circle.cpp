@@ -27,8 +27,8 @@ bool control_callback(nuturtle_control::control::Request& control, nuturtle_cont
     velocity  = control.velocity;
     radius = control.radius;
 
-    vel_cmd.linear.x = velocity;
-    vel_cmd.angular.z = velocity/radius;
+    vel_cmd.linear.x = velocity*radius;
+    vel_cmd.angular.z = velocity;
 
     return true;
 }
@@ -60,8 +60,8 @@ int main(int argc, char** argv)
     vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 10);
 
     //Services
-    ros::ServiceServer control = nh.advertiseService("reset",  control_callback);
-    ros::ServiceServer reverse = nh.advertiseService("teleport", reverse_callback);
+    ros::ServiceServer control = nh.advertiseService("control",  control_callback);
+    ros::ServiceServer reverse = nh.advertiseService("reverse", reverse_callback);
     ros::ServiceServer stop = nh.advertiseService("stop", stop_callback);
 
     while(ros::ok())

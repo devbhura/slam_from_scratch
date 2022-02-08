@@ -108,6 +108,8 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        odom:
+          Value: true
         red_base_footprint:
           Value: true
         red_base_link:
@@ -132,19 +134,20 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          red_base_footprint:
+          odom:
             {}
-          red_base_link:
-            red_base_scan:
-              {}
-            red_caster_back_link:
-              {}
-            red_imu_link:
-              {}
-            red_wheel_left_link:
-              {}
-            red_wheel_right_link:
-              {}
+          red_base_footprint:
+            red_base_link:
+              red_base_scan:
+                {}
+              red_caster_back_link:
+                {}
+              red_imu_link:
+                {}
+              red_wheel_left_link:
+                {}
+              red_wheel_right_link:
+                {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -183,7 +186,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.7989039421081543
+      Distance: 2.1206724643707275
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -220,4 +223,4 @@ Window Geometry:
     collapsed: true
   Width: 1396
   X: 292
-  Y: 49
+  Y: 27

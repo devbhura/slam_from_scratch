@@ -44,6 +44,8 @@
 #include "ros/console.h"
 #include "nuturtlebot_msgs/WheelCommands.h"
 #include "nuturtlebot_msgs/SensorData.h"
+#include "turtlelib/diff_drive.hpp"
+#include "turtlelib/rigid2d.hpp"
 
 
 static double timestep;
@@ -53,7 +55,15 @@ static double theta, theta0;
 static double obs_radius, x_length, y_length;
 static visualization_msgs::MarkerArray obstacles_array, wall_array;
 static std::vector<double> obstacles_x_arr, obstacles_y_arr, obstacles_theta_arr, wall_x_arr, wall_y_arr;
-static ros::Publisher obstacle_marker, wall_marker;
+static ros::Publisher obstacle_marker, wall_marker, snsr_data;
+static turtlelib::DiffDrive diff_drive;
+static double motor_cmd_to_radsec;
+static int encoder_ticks_to_rad;
+static turtlelib::WheelPhi old_phi;
+static int r;
+static double dist, radius;
+static turtlelib::Config q;
+static nuturtlebot_msgs::SensorData sensor;
 
 /// \brief
 /// callback for reset service that resets the positon of the robot to the original position
@@ -191,11 +201,56 @@ void obstacles()
 //    wall_marker.publish(wall_array);
 // }
 
-bool sub_wheel_callback(nuturtlebot_msgs::WheelCommands& input)
+void sub_wheel_callback(const nuturtlebot_msgs::WheelCommands& input)
 {
-    
+    turtlelib::Vector2D u;
 
-    return true;
+    u.x = input.left_velocity;
+    u.y = input.right_velocity;
+
+    // ROS_INFO_STREAM("calculated u.x: %f" << u.x);
+    // ROS_INFO_STREAM("calculated u.y: %f" << u.y);
+
+    // ROS_INFO_STREAM("input.left_velocity: %f" << input.left_velocity);
+    // ROS_INFO_STREAM("input.right_velocity: %f" << input.right_velocity);
+
+    if(u.x>256)
+    {
+        u.x = 256;
+    }
+    if(u.x>256)
+    {
+        u.x = 256;
+    }
+    
+    if(u.y<-256)
+    {
+        u.y = -256;
+    }
+    if(u.y<-256)
+    {
+        u.y = -256;
+    }
+    u.x = u.x*motor_cmd_to_radsec;
+    u.y = u.y*motor_cmd_to_radsec;
+
+    old_phi.left_phi += u.x/r;
+    old_phi.right_phi += u.y/r;
+
+
+    q = diff_drive.ForwardKin(old_phi);
+
+    diff_drive = turtlelib::DiffDrive(dist, radius, old_phi, q);
+
+    // ROS_INFO_STREAM("q.x: %f" << q.x);
+    // ROS_INFO_STREAM("q.y: %f" << q.y);
+    // ROS_INFO_STREAM("q.theta: %d" << q.phi);
+
+    sensor.left_encoder = int(old_phi.left_phi*encoder_ticks_to_rad);
+    sensor.right_encoder = int(old_phi.right_phi*encoder_ticks_to_rad);
+
+    // ROS_INFO_STREAM("sensor.left_encoder: %d" << sensor.left_encoder);
+    
 
 }
 
@@ -207,7 +262,7 @@ int main(int argc, char** argv)
     ros::NodeHandle obstacle("obstacle");
     
     // define variables
-    sensor_msgs::JointState joint_msg;
+    // sensor_msgs::JointState joint_msg;
     
     // define subscribers
     ros::Subscriber sub_wheel = red.subscribe("/wheel_cmd", 1, sub_wheel_callback);
@@ -218,13 +273,13 @@ int main(int argc, char** argv)
 
     // Define Publishers
     ros::Publisher pub = nh.advertise<std_msgs::UInt64>("timestep", 100);
-    ros::Publisher joint_msg_pub = red.advertise<sensor_msgs::JointState>("joint_states", 1);
+    // ros::Publisher joint_msg_pub = red.advertise<sensor_msgs::JointState>("joint_states", 1);
     obstacle_marker = obstacle.advertise<visualization_msgs::MarkerArray>("obs", 1, true);
     wall_marker = obstacle.advertise<visualization_msgs::MarkerArray>("wall", 1, true);
-
+    snsr_data = red.advertise<nuturtlebot_msgs::SensorData>("sensor_data", 10);
 
     // variables from the parameter
-    int r;
+    
     timestep = 0;
     nh.param("rate", r, 500);
     nh.param("x0",x0,0.0);
@@ -236,9 +291,17 @@ int main(int argc, char** argv)
     nh.param("obs_radius",obs_radius,0.025);
     nh.param("x_length", x_length, 5.0);
     nh.param("y_length", y_length, 5.0);
+    nh.getParam("motor_cmd_to_radsec", motor_cmd_to_radsec);
+    nh.getParam("encoder_ticks_to_rad", encoder_ticks_to_rad);
+    nh.getParam("track_width", dist);
+    nh.getParam("wheel_radius", radius);
 
-    
-
+    // Assign Diff Drive
+    turtlelib::Config c;
+    c.x = x0;
+    c.y = yinit;
+    c.phi = theta0;
+    diff_drive = turtlelib::DiffDrive(dist, radius, old_phi, c);
 
     ros::Rate loop_rate(r);
 
@@ -255,22 +318,22 @@ int main(int argc, char** argv)
     transformStamped.header.stamp = ros::Time::now();
     transformStamped.header.frame_id = "world";
     transformStamped.child_frame_id = "red_base_footprint";
-    transformStamped.transform.translation.x = x;
-    transformStamped.transform.translation.y = y;
+    transformStamped.transform.translation.x = c.x;
+    transformStamped.transform.translation.y = c.y;
     transformStamped.transform.translation.z = 0.0;
     tf2::Quaternion q;
-    q.setRPY(0, 0, theta);
+    q.setRPY(0, 0, c.phi);
     transformStamped.transform.rotation.x = q.x();
     transformStamped.transform.rotation.y = q.y();
     transformStamped.transform.rotation.z = q.z();
     transformStamped.transform.rotation.w = q.w();
 
-    joint_msg.header.frame_id = "world";
-    joint_msg.name.push_back("red_wheel_left_joint");
-    joint_msg.name.push_back("red_wheel_right_joint");
-    joint_msg.position.push_back(0.0);
-    joint_msg.position.push_back(0.0);
-    joint_msg_pub.publish(joint_msg);
+    // joint_msg.header.frame_id = "world";
+    // joint_msg.name.push_back("red_wheel_left_joint");
+    // joint_msg.name.push_back("red_wheel_right_joint");
+    // joint_msg.position.push_back(0.0);
+    // joint_msg.position.push_back(0.0);
+    // joint_msg_pub.publish(joint_msg);
     
     
     // walls();
@@ -287,10 +350,14 @@ int main(int argc, char** argv)
         loop_rate.sleep();
         timestep+=1;
 
+        turtlelib::Config con = diff_drive.getConfig();
+
+        // ROS_INFO_STREAM("con.x: %f" << con.x);
+
         transformStamped.header.stamp = ros::Time::now();
-        transformStamped.transform.translation.x = x;
-        transformStamped.transform.translation.y = y;
-        q.setRPY(0, 0, theta);
+        transformStamped.transform.translation.x = con.x;
+        transformStamped.transform.translation.y = con.y;
+        q.setRPY(0, 0, con.phi);
         transformStamped.transform.rotation.x = q.x();
         transformStamped.transform.rotation.y = q.y();
         transformStamped.transform.rotation.z = q.z();
@@ -300,7 +367,7 @@ int main(int argc, char** argv)
         
         obstacles();
         
-    
+        snsr_data.publish(sensor);
 
     }
 

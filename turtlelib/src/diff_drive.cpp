@@ -71,25 +71,28 @@ namespace turtlelib
     V.xdot = r*u.x/2 + r*u.y/2;
     V.ydot = 0;
 
-    Config q;
-    q.x = q.x + V.xdot;
-    q.y = q.y + V.ydot;
-    q.phi = q.phi + V.thetadot;
+    Config q_new;
+    q_new.x = q.x + V.xdot;
+    q_new.y = q.y + V.ydot;
+    q_new.phi = q.phi + V.thetadot;
 
-    return q;
+    return q_new;
  }
 
  Vector2D DiffDrive::InvKin(Twist V)
  {
-    if(!almost_equal(V.ydot,0.0, 0.01))
+    if(!almost_equal(V.ydot,0.0, 0.1))
     {
         throw std::logic_error("Invalid Twist!");
     }
     else{
     Vector2D u;
 
-    u.x = -d*V.thetadot/r + V.xdot;
-    u.y =  d*V.thetadot/r + V.xdot;
+   //  u.x = -d*V.thetadot/r + V.xdot;
+   //  u.y =  d*V.thetadot/r + V.xdot;
+
+   u.x = (-d*V.thetadot + V.xdot)/r;
+   u.y =  (d*V.thetadot + V.xdot)/r;
 
     return u;
     }

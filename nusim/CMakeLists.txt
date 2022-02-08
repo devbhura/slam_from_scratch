@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   geometry_msgs
   tf2
+  message_generation
+  nuturtlebot_msgs
 )
 
 
@@ -115,6 +117,7 @@ catkin_package(
   geometry_msgs
   message_runtime
   std_msgs
+  nuturtlebot_msgs
 #  DEPENDS system_lib
 )
 
@@ -156,6 +159,7 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
+  turtlelib
 )
 
 #############

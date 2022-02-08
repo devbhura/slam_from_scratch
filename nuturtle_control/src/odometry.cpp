@@ -113,7 +113,7 @@ int main(int argc, char** argv)
     diff_drive = turtlelib::DiffDrive(dist, radius, phi, qhat);
 
     // subscribe to joint state
-    joint_state_sub = nh.subscribe("/joint_states", 1, joint_state_callback);
+    joint_state_sub = nh.subscribe("joint_states", 1, joint_state_callback);
     
     // Assign the publisher odom
     odom_pub = nh.advertise<nav_msgs::Odometry>("/odom", 10);
@@ -133,6 +133,7 @@ int main(int argc, char** argv)
     
     while(ros::ok())
     {
+        ros::spinOnce();
 
         publish_topics();
         loop_rate.sleep();
