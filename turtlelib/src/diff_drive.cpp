@@ -67,14 +67,31 @@ namespace turtlelib
     u.y =  - phi.right_phi + newphi.right_phi;
     Twist V;
 
-    V.thetadot = -r*u.x/(2*d) + r*u.y/(2*d);
-    V.xdot = r*u.x/2 + r*u.y/2;
+   phi.left_phi = newphi.left_phi;
+   phi.right_phi = newphi.right_phi;
+
+    V.thetadot = -r*u.x/(2.0*d) + r*u.y/(2.0*d);
+    V.xdot = r*u.x/2.0 + r*u.y/2.0;
     V.ydot = 0;
 
-    Config q_new;
-    q_new.x = q.x + V.xdot;
-    q_new.y = q.y + V.ydot;
-    q_new.phi = q.phi + V.thetadot;
+   Transform2D Tbb_hat = integrate_twist(V);
+
+   Vector2D v_hat = Tbb_hat.translation();
+   double phi_hat = Tbb_hat.rotation();
+
+   Vector2D v;
+   v.x = q.x;
+   v.y = q.y;
+   double v_phi = q.phi;
+   Transform2D Twb(v, v_phi);
+
+   Transform2D Twb_hat = Twb*Tbb_hat;
+   Vector2D trans = Twb_hat.translation();
+   double rot = Twb_hat.rotation();
+   Config q_new;
+   q_new.x = trans.x;
+   q_new.y = trans.y;
+   q_new.phi = rot;
 
     return q_new;
  }

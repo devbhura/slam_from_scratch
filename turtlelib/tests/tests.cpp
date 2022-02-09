@@ -4,6 +4,82 @@
 #include <sstream>
 #include <cmath>
 
+
+
+TEST_CASE("Forward kinematics Robot driving forward", "[DiffDrive]") { //Marco Morales
+    turtlelib::Config config,new_config;
+    turtlelib::WheelPhi phi,phi_new,phiold;
+    double PI = turtlelib::PI;
+    // turtlelib::speed phidot;
+    // config.x = 0;
+    // config.y = 0;
+    // config.theta = 0;
+    // phi.leftangle = 0;
+    // phi.right_angle = 0;
+    // phi_dot.left_vel = 0;
+    // phidot.rightvel = 0;
+    double d,r;
+    d = 0.08;
+    r = 0.033;
+    turtlelib::DiffDrive diff = turtlelib::DiffDrive(d,r);
+
+    phi_new.left_phi = PI/4;
+    phi_new.right_phi = PI/4;
+
+    new_config = diff.ForwardKin(phi_new);
+    CHECK(new_config.x == Approx(0.033*(PI/4))); 
+    CHECK(new_config.y == Approx(0));
+    CHECK(new_config.phi == Approx(0)); 
+}
+
+// TESTCASE("Forward kinematics Robot driving rotation", "[DiffDrive]") {
+//     config config,new_config;
+//     phiangles phi,phi_new,phiold;
+//     speed phidot;
+//     config.x = 0;
+//     config.y = 0;
+//     config.theta = 0;
+//     phi.leftangle = 0;
+//     phi.right_angle = 0;
+//     phi_dot.left_vel = 0;
+//     phidot.rightvel = 0;
+//     DiffDrive diff = DiffDrive(config,phi,phi_dot);
+
+//     phi_new.left_angle = PI/4;
+//     phi_new.right_angle = -PI/4;
+
+//     new_config = diff.ForwardKin(phi_new);
+//     CHECK(new_config.x == Approx(0.0)); 
+//     CHECK(new_config.y == Approx(0));
+//     CHECK(new_config.theta == Approx(-0.3239767424)); 
+// }
+
+
+// TESTCASE("Forward kinematics Robot driving arc", "[DiffDrive]") {
+//     config config,new_config;
+//     phiangles phi,phi_new,phiold;
+//     speed phidot;
+//     Twist2D twist;
+
+//     config.x = 0;
+//     config.y = 0;
+//     config.theta = 0;
+//     phi.leftangle = 0;
+//     phi.right_angle = 0;
+//     phi_dot.left_vel = 0;
+//     phidot.rightvel = 0;
+//     DiffDrive diff = DiffDrive(config,phi,phi_dot);
+
+//     phi_new.left_angle = 19.992;
+//     phi_new.right_angle = 27.6079;
+
+//     new_config = diff.ForwardKin(phi_new);
+//     CHECK(new_config.x == Approx(0.5)); 
+//     CHECK(new_config.y == Approx(0.5));
+//     CHECK(new_config.theta == Approx(PI/2)); 
+// }
+
+
 TEST_CASE( "Test for rotation", "rotation" ) {// Devesh Bhura
 
     turtlelib::Transform2D Tab;

@@ -58,7 +58,7 @@ static std::vector<double> obstacles_x_arr, obstacles_y_arr, obstacles_theta_arr
 static ros::Publisher obstacle_marker, wall_marker, snsr_data;
 static turtlelib::DiffDrive diff_drive;
 static double motor_cmd_to_radsec;
-static int encoder_ticks_to_rad;
+static double encoder_ticks_to_rad;
 static turtlelib::WheelPhi old_phi;
 static int r;
 static double dist, radius;
@@ -237,19 +237,21 @@ void sub_wheel_callback(const nuturtlebot_msgs::WheelCommands& input)
     old_phi.left_phi += u.x/r;
     old_phi.right_phi += u.y/r;
 
+    ROS_INFO_STREAM("old_phi.left_phi: %f" << old_phi.left_phi);
+    ROS_INFO_STREAM("old_phi.right_phi: %f" << old_phi.right_phi);
 
     q = diff_drive.ForwardKin(old_phi);
 
     diff_drive = turtlelib::DiffDrive(dist, radius, old_phi, q);
 
-    // ROS_INFO_STREAM("q.x: %f" << q.x);
-    // ROS_INFO_STREAM("q.y: %f" << q.y);
-    // ROS_INFO_STREAM("q.theta: %d" << q.phi);
+    ROS_INFO_STREAM("q.x: %f" << q.x);
+    ROS_INFO_STREAM("q.y: %f" << q.y);
+    ROS_INFO_STREAM("q.theta: %d" << q.phi);
 
-    sensor.left_encoder = int(old_phi.left_phi*encoder_ticks_to_rad);
-    sensor.right_encoder = int(old_phi.right_phi*encoder_ticks_to_rad);
+    sensor.left_encoder = int(old_phi.left_phi/encoder_ticks_to_rad);
+    sensor.right_encoder = int(old_phi.right_phi/encoder_ticks_to_rad);
 
-    // ROS_INFO_STREAM("sensor.left_encoder: %d" << sensor.left_encoder);
+    // ROS_INFO_STREAM("sensor.left_encoder: %d" << encoder_ticks_to_rad);
     
 
 }
@@ -308,6 +310,9 @@ int main(int argc, char** argv)
     x = x0;
     y = yinit;
     theta = theta0;
+
+    old_phi.left_phi = 0.0;
+    old_phi.right_phi = 0.0;
     
 
     // Transform definition
@@ -345,9 +350,7 @@ int main(int argc, char** argv)
         msg.data = timestep;
         pub.publish(msg);
 
-        ros::spinOnce();
-
-        loop_rate.sleep();
+        
         timestep+=1;
 
         turtlelib::Config con = diff_drive.getConfig();
@@ -368,7 +371,9 @@ int main(int argc, char** argv)
         obstacles();
         
         snsr_data.publish(sensor);
+        ros::spinOnce();
 
+        loop_rate.sleep();
     }
 
     return 0;

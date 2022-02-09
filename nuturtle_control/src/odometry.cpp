@@ -133,9 +133,11 @@ int main(int argc, char** argv)
     
     while(ros::ok())
     {
-        ros::spinOnce();
+        
 
         publish_topics();
+
+        ros::spinOnce();
         loop_rate.sleep();
         
         

@@ -66,11 +66,11 @@ int main(int argc, char** argv)
 
     while(ros::ok())
     {
-        
+        vel_pub.publish(vel_cmd);
+
         ros::spinOnce();
 
         loop_rate.sleep();
-        vel_pub.publish(vel_cmd);
 
     }
 

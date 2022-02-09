@@ -24,7 +24,7 @@
 #include "ros/console.h"
 
 static double motor_cmd_to_radsec;
-static int encoder_ticks_to_rad;
+static double encoder_ticks_to_rad;
 static turtlelib::Config q_old, q_new;
 static turtlelib::WheelPhi phi_old, phi_new;
 static turtlelib::Twist V_applied;
@@ -49,8 +49,26 @@ void vel_sub_callback(const geometry_msgs::Twist& msg)
     // ROS_INFO_STREAM("calculated u.y: %f" << u.y);
     // ROS_INFO_STREAM("motor_cmd_2_rs: %f" << motor_cmd_to_radsec);
 
-    wheel_cmd.left_velocity = int(u.x/motor_cmd_to_radsec);
-    wheel_cmd.right_velocity = int(u.y/motor_cmd_to_radsec);
+    wheel_cmd.left_velocity = (u.x/motor_cmd_to_radsec);
+    wheel_cmd.right_velocity = (u.y/motor_cmd_to_radsec);
+
+    if(wheel_cmd.left_velocity>256)
+    {
+        wheel_cmd.left_velocity = 256;
+    }
+    if(wheel_cmd.right_velocity>256)
+    {
+        wheel_cmd.right_velocity = 256;
+    }
+    
+    if(wheel_cmd.right_velocity<-256)
+    {
+        wheel_cmd.right_velocity = -256;
+    }
+    if(wheel_cmd.left_velocity<-256)
+    {
+        wheel_cmd.left_velocity = -256;
+    }
 
     // ROS_INFO_STREAM("calculated wheel_cmd.left: %d" << wheel_cmd.left_velocity);
     // ROS_INFO_STREAM("calculated wheel_cmd.right: %d" << wheel_cmd.right_velocity);
@@ -61,19 +79,20 @@ void sensor_data_callback(const nuturtlebot_msgs::SensorData& sensor_data)
 {   
 
     js_msg.header.stamp = ros::Time::now();
-    double js_pos1 = double(sensor_data.left_encoder - saved_left_vel_tick)/double(encoder_ticks_to_rad);
-    double js_pos2 = double(sensor_data.right_encoder - saved_right_vel_tick)/double(encoder_ticks_to_rad);
-    js_msg.position = {js_pos1, js_pos2};
-    double js_vel1 = double(sensor_data.left_encoder - saved_left_vel_tick)*double(motor_cmd_to_radsec);
-    double js_vel2 = double(sensor_data.right_encoder - saved_right_vel_tick)*double(motor_cmd_to_radsec);
-    js_msg.velocity = {js_vel1, js_vel2};
+    // float js_pos1 =(float)(sensor_data.left_encoder - saved_left_vel_tick)*(encoder_ticks_to_rad);
+    // float js_pos2 = (float)(sensor_data.right_encoder - saved_right_vel_tick)*(encoder_ticks_to_rad);
+    // js_msg.position = {js_pos1, js_pos2};
+    js_msg.position = {sensor_data.left_encoder*encoder_ticks_to_rad, sensor_data.right_encoder*encoder_ticks_to_rad};
+    // double js_vel1 = double(sensor_data.left_encoder - saved_left_vel_tick)*double(motor_cmd_to_radsec);
+    // double js_vel2 = double(sensor_data.right_encoder - saved_right_vel_tick)*double(motor_cmd_to_radsec);
+    js_msg.velocity = {u.x, u.y};
     
 
-    ROS_INFO_STREAM("saved_right_vel_tick: %d" << saved_right_vel_tick);
-    ROS_INFO_STREAM("sensor_data: %d" << sensor_data.right_encoder);
-    ROS_INFO_STREAM("diff: %d" << (sensor_data.right_encoder - saved_right_vel_tick));
-    ROS_INFO_STREAM("js_msg.velocity: %f" << js_vel1);
-    ROS_INFO_STREAM("motor_cmd_to_radsec: %f" << motor_cmd_to_radsec);
+    // ROS_INFO_STREAM("saved_right_vel_tick: %d" << saved_right_vel_tick);
+    // ROS_INFO_STREAM("sensor_data: %d" << sensor_data.right_encoder);
+    // ROS_INFO_STREAM("diff: %d" << (sensor_data.right_encoder - saved_right_vel_tick));
+    // ROS_INFO_STREAM("js_msg.velocity: %f" << js_vel1);
+    // ROS_INFO_STREAM("motor_cmd_to_radsec: %f" << motor_cmd_to_radsec);
     saved_left_vel_tick = sensor_data.left_encoder;
     saved_right_vel_tick = sensor_data.right_encoder;
 }
@@ -108,12 +127,14 @@ int main(int argc, char** argv)
     while(ros::ok())
     {
 
-        ros::spinOnce();
-
-        loop_rate.sleep();
+        
         
         wheel_cmd_pub.publish(wheel_cmd);
         joint_state_pub.publish(js_msg);
+
+        ros::spinOnce();
+
+        loop_rate.sleep();
 
     }
 

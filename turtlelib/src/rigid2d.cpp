@@ -195,9 +195,8 @@ double Transform2D::rotation() const
 // Integrate a twist to give the transformation in the body frame
 Transform2D integrate_twist(Twist V)
 {
-
     Vector2D v_s;
-
+    
     if(V.thetadot==0.0)
     {
         v_s.x = V.xdot;
@@ -205,13 +204,15 @@ Transform2D integrate_twist(Twist V)
         Transform2D Tbb_hat(v_s);
         return Tbb_hat;
     }
+    
 
     double theta_s = V.thetadot;
     v_s.x = V.ydot/theta_s;
     v_s.y = -V.xdot/theta_s;
 
-    Transform2D Tbs(v_s), Tss_hat(theta_s), Tbb_hat; 
-    Tbb_hat = Tbs*Tss_hat*Tbs;
+    Transform2D Tsb(v_s), Tss_hat(theta_s), Tbb_hat; 
+    Transform2D Tbs = Tsb.inv();
+    Tbb_hat = Tbs*Tss_hat*Tsb;
     return Tbb_hat;
 
 }
