@@ -16,7 +16,17 @@
     <node if="$(eval arg('cmd_src') == 'circle')" name="circle" pkg="nuturtle_control" type="circle"/>
 
     <include file="$(find nusim)/launch/nusim.launch">
-         <!-- <arg name="use_jsp" value="true"/> -->
+         <arg name="use_rviz" value="false"/>
     </include>
+
+    <include file="$(find nuturtle_description)/launch/load.launch">
+        <arg name="color" value="blue"/>
+        <arg name="y" value="0.8"/>
+        <arg name="x" value="-0.6"/>
+        <arg name="use_rviz" value="false" />
+
+    </include>
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-f world -d $(find nuturtle_control)/config/blue_and_red.rviz" required="true"/>
 
 </launch>

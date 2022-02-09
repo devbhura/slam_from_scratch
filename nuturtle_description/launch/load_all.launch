@@ -6,6 +6,7 @@
         <arg name="color" value="red"/>
         <arg name="x" value="1"/>
         <arg name="robot_setup" value="$(arg setup)"/>
+        <arg name="use_rviz" value="false"/>
         
 
     </include>
@@ -14,6 +15,7 @@
         <arg name="color" value="green"/>
         <arg name="y" value="1"/>
         <arg name="robot_setup" value="$(arg setup)"/>
+        <arg name="use_rviz" value="false"/>
 
     </include>
 
@@ -21,6 +23,7 @@
         <arg name="color" value="blue"/>
         <arg name="x" value="-1"/>
         <arg name="robot_setup" value="$(arg setup)"/>
+        <arg name="use_rviz" value="false"/>
 
     </include>
 
@@ -28,7 +31,10 @@
         <arg name="color" value="black"/>
         <arg name="y" value="-1"/>
         <arg name="robot_setup" value="$(arg setup)"/>
+        <arg name="use_rviz" value="false"/>
 
     </include>
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg setup)" required="true"/>
 
 </launch>

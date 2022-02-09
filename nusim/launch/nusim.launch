@@ -13,7 +13,7 @@
     <rosparam command="load" file="$(find nusim)/config/basic_world.yaml" ns="nusim"/>
     <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" ns="nusim"/>
 
-    <group if="$(arg use_rviz)">
+    <!-- <group if="$(arg use_rviz)"> -->
 
         
         <group ns="$(arg color)">
@@ -23,11 +23,13 @@
                 <!-- <remap from="/red/joint_states" to="/joint_states"/>
                 <remap from="/red/sensor_data" to="/sensor_data"/> -->
             </node>
-            <node name="rviz" pkg="rviz" type="rviz" args="-f world -d $(find nusim)/config/nusim.rviz" required="true"/>
+            <node if="$(eval arg('use_rviz') == 'true')" name="rviz" pkg="rviz" type="rviz" args="-f world -d $(find nusim)/config/nusim.rviz" required="true"/>
             <node pkg="tf2_ros" type="static_transform_publisher" name="world2link" args="$(arg x) $(arg y) 0 0 0 0 1 world $(arg color)_base_footprint" />
         
         </group>
 
-    </group>
+    <!-- </group> -->
+
+    
 
 </launch>

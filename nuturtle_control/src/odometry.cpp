@@ -39,8 +39,8 @@ void joint_state_callback(const sensor_msgs::JointState& js_msg)
 {
     
 
-    phi.left_phi = js_msg.position[0];
-    phi.right_phi = js_msg.position[1];
+    phi.left_phi = js_msg.position.at(0);
+    phi.right_phi = js_msg.position.at(1);
 
     
     qhat = diff_drive.ForwardKin(phi);
@@ -63,10 +63,10 @@ void publish_topics()
     odom.pose.pose.orientation.y = quat.y();
     odom.pose.pose.orientation.z = quat.z();
     odom.pose.pose.orientation.w = quat.w();
-    odom_pub.publish(odom);
+    
 
     // TF 
-    tf2_ros::TransformBroadcaster br;
+    
 
     transformStamped.header.stamp = ros::Time::now();
     transformStamped.transform.translation.x = q_odom.x;
@@ -78,7 +78,7 @@ void publish_topics()
     transformStamped.transform.rotation.z = quat.z();
     transformStamped.transform.rotation.w = quat.w();
 
-    br.sendTransform(transformStamped);
+    
 
 
 }
@@ -100,9 +100,12 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "odometry");
     ros::NodeHandle nh;
-    ros::Rate loop_rate(100);
+    ros::Rate loop_rate(500);
+    ros::NodeHandle nusim("~nusim");
 
     std::string body_id, odom_id, wheel_left, wheel_right;
+
+    double x0, yinit, theta0;
 
     nh.getParam("body_id", body_id);
     nh.param<std::string>("odom_id", odom_id , "odom");
@@ -110,10 +113,19 @@ int main(int argc, char** argv)
     nh.getParam("wheel_right", wheel_right);
     nh.getParam("dist", dist);
     nh.getParam("radius", radius);
-    diff_drive = turtlelib::DiffDrive(dist, radius, phi, qhat);
+    nusim.param("x0",x0,-0.6);
+    nusim.param("y0",yinit,0.8);
+    nusim.param("theta0",theta0,0.0);
+
+    turtlelib::Config c;
+    c.x = x0;
+    c.y = yinit;
+    c.phi = theta0;
+
+    diff_drive = turtlelib::DiffDrive(dist, radius, phi, c);
 
     // subscribe to joint state
-    joint_state_sub = nh.subscribe("joint_states", 1, joint_state_callback);
+    joint_state_sub = nh.subscribe("/joint_states", 1, joint_state_callback);
     
     // Assign the publisher odom
     odom_pub = nh.advertise<nav_msgs::Odometry>("/odom", 10);
@@ -127,8 +139,8 @@ int main(int argc, char** argv)
 
     // Transform definition
     transformStamped.header.stamp = ros::Time::now();
-    transformStamped.header.frame_id = body_id;
-    transformStamped.child_frame_id = odom_id;
+    transformStamped.header.frame_id = odom_id;
+    transformStamped.child_frame_id = "blue_base_footprint";
 
     
     while(ros::ok())
@@ -136,7 +148,9 @@ int main(int argc, char** argv)
         
 
         publish_topics();
-
+        odom_pub.publish(odom);
+        tf2_ros::TransformBroadcaster br;
+        br.sendTransform(transformStamped);
         ros::spinOnce();
         loop_rate.sleep();
         
