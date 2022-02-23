@@ -3,14 +3,17 @@
 
 /**
  * PARAMETERS:
- * 
+    * motor_cmd_to_radsec (double): converts ticks to rad/sec
+    * encoder_ticks_to_radsec (double): converts encoder ticks to rad/sec
+    * dist (double): half the track width of the robot
+    * radius (double): radius of the wheel of the robot 
  * PUBLISHERS:
- * 
+    * wheel_cmd_pub: publishes to /wheel_cmd 
+    * joint_state_pub: publishes to /joint_states
  * SUBSCRIBERS:
- * 
+    * vel_sub: subscribes to /cmd_vel
+    * sensor_data_sub: subscribes to /sensor_data
  * SERVICES:
- *  
- * 
  * 
  */
 
@@ -37,6 +40,10 @@ static sensor_msgs::JointState js_msg;
 static int saved_left_vel_tick = 0;
 static int saved_right_vel_tick = 0;
 
+/// \brief callback for cmd_vel subscriber
+/// Input: 
+/// \param msg - Twist being subscribed to
+/// Output: Empty
 void vel_sub_callback(const geometry_msgs::Twist& msg)
 {
     
@@ -45,10 +52,7 @@ void vel_sub_callback(const geometry_msgs::Twist& msg)
     V_applied.ydot = msg.linear.y;
 
     u = diff_drive.InvKin(V_applied);
-    // ROS_INFO_STREAM("calculated u.x: %f" << u.x);
-    // ROS_INFO_STREAM("calculated u.y: %f" << u.y);
-    // ROS_INFO_STREAM("motor_cmd_2_rs: %f" << motor_cmd_to_radsec);
-
+    
     wheel_cmd.left_velocity = (u.x/motor_cmd_to_radsec);
     wheel_cmd.right_velocity = (u.y/motor_cmd_to_radsec);
 
@@ -70,29 +74,20 @@ void vel_sub_callback(const geometry_msgs::Twist& msg)
         wheel_cmd.left_velocity = -256;
     }
 
-    // ROS_INFO_STREAM("calculated wheel_cmd.left: %d" << wheel_cmd.left_velocity);
-    // ROS_INFO_STREAM("calculated wheel_cmd.right: %d" << wheel_cmd.right_velocity);
-
+    
 }
 
+/// \brief callback for sensor_data subscriber
+/// Input: 
+/// \param msg - sensor_data being subscribed to
+/// Output: Empty
 void sensor_data_callback(const nuturtlebot_msgs::SensorData& sensor_data)
 {   
 
     js_msg.header.stamp = ros::Time::now();
-    // float js_pos1 =(float)(sensor_data.left_encoder - saved_left_vel_tick)*(encoder_ticks_to_rad);
-    // float js_pos2 = (float)(sensor_data.right_encoder - saved_right_vel_tick)*(encoder_ticks_to_rad);
-    // js_msg.position = {js_pos1, js_pos2};
     js_msg.position = {sensor_data.left_encoder*encoder_ticks_to_rad, sensor_data.right_encoder*encoder_ticks_to_rad};
-    // double js_vel1 = double(sensor_data.left_encoder - saved_left_vel_tick)*double(motor_cmd_to_radsec);
-    // double js_vel2 = double(sensor_data.right_encoder - saved_right_vel_tick)*double(motor_cmd_to_radsec);
     js_msg.velocity = {u.x, u.y};
     
-
-    // ROS_INFO_STREAM("saved_right_vel_tick: %d" << saved_right_vel_tick);
-    // ROS_INFO_STREAM("sensor_data: %d" << sensor_data.right_encoder);
-    // ROS_INFO_STREAM("diff: %d" << (sensor_data.right_encoder - saved_right_vel_tick));
-    // ROS_INFO_STREAM("js_msg.velocity: %f" << js_vel1);
-    // ROS_INFO_STREAM("motor_cmd_to_radsec: %f" << motor_cmd_to_radsec);
     saved_left_vel_tick = sensor_data.left_encoder;
     saved_right_vel_tick = sensor_data.right_encoder;
 }
@@ -111,7 +106,7 @@ int main(int argc, char** argv)
     wheel_cmd_pub = nh.advertise<nuturtlebot_msgs::WheelCommands>("/wheel_cmd", 10);
     
     ros::Subscriber sensor_data_sub = nh.subscribe("/sensor_data", 10, sensor_data_callback);
-    joint_state_pub = nh.advertise<sensor_msgs::JointState>("joint_states", 10);
+    joint_state_pub = nh.advertise<sensor_msgs::JointState>("/joint_states", 10);
     
     js_msg.header.frame_id = "world";
     js_msg.name.push_back("red_wheel_left_joint");
@@ -126,8 +121,6 @@ int main(int argc, char** argv)
     
     while(ros::ok())
     {
-
-        
         
         wheel_cmd_pub.publish(wheel_cmd);
         joint_state_pub.publish(js_msg);

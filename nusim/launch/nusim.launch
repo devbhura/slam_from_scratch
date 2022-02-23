@@ -10,8 +10,8 @@
     <arg name="y" default="0"/>
     <arg name="z" default="0"/>
 
-    <rosparam command="load" file="$(find nusim)/config/basic_world.yaml" ns="nusim"/>
-    <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" ns="nusim"/>
+    <rosparam command="load" file="$(find nusim)/config/basic_world.yaml" />
+    <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
 
     <!-- <group if="$(arg use_rviz)"> -->
 

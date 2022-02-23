@@ -1,0 +1,22 @@
+<launch>
+
+    <rosparam command="load" file="$(find nuturtle_control)/config/odom_param.yaml"/>
+
+    <include file="$(find nusim)/launch/nusim.launch">
+        <arg name="use_rviz" value="false"/>
+    </include>
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-f world -d $(find nuturtle_control)/config/blue_and_red.rviz" required="true"/>
+
+
+    <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface"/>
+
+
+
+    <node name="odometry" pkg="nuturtle_control" type="odometry"/>
+    
+    <node name="circle" pkg="nuturtle_control" type="circle"/>
+
+
+
+</launch>

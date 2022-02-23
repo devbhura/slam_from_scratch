@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
     tf2_ros
     std_msgs
     message_generation
+    catch_ros
 )
 
 
@@ -198,9 +199,9 @@ target_link_libraries(circle
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-# install(TARGETS odometry
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(TARGETS odometry turtle_interface circle
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 # install(TARGETS turtle_interface
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -221,12 +222,23 @@ target_link_libraries(circle
 #   PATTERN ".svn" EXCLUDE
 # )
 
-## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
+install(FILES
+  loader.sh
+  # myfile2
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+
+)
+
+install(PROGRAMS
+  loader.sh
+  # myfile2
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+
+)
+
+install(DIRECTORY config/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
+install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
+
 
 #############
 ## Testing ##
@@ -240,3 +252,18 @@ target_link_libraries(circle
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+
+  catch_add_rostest_node(turtle_odom_test_node tests/turtle_odom_test_node.cpp)
+  target_link_libraries(turtle_odom_test_node turtlelib ${catkin_LIBRARIES})
+  add_rostest(launch/turtle_odom.test DEPENDENCIES turtle_odom_test_node)
+
+  add_rostest(launch/turtle_circle.test)
+
+  catch_add_rostest_node(turtle_interface_test tests/turtle_interface_test.cpp)
+  target_link_libraries(turtle_interface_test turtlelib ${catkin_LIBRARIES})
+  add_rostest(tests/turtle_interface_test.test DEPENDENCIES turtle_interface_test)
+
+endif()

@@ -21,11 +21,12 @@
  * PUBLISHERS:
     * obstacle_marker: publishes the obstacle marker 
     * pub: publishes the timestep
-    * joint_msg_pub: publishes the joint states
+    * wall_marker: publishes the wall 
  * SERVICES:
-    *  reset: resets the position of the turtlebot3 to the original position
-    *  teleport: sets the position of the turtlebot3 to a new user specified position
+    * reset: resets the position of the turtlebot3 to the original position
+    * teleport: sets the position of the turtlebot3 to a new user specified position
  * SUBSCRIBERS:
+    * sub_wheel: subscribe to wheel_cmd topic
  */
 
 
@@ -148,59 +149,133 @@ void obstacles()
 
 }
 
-// void walls()
-// {
-//     wall_x_arr.resize(4);
-//     wall_x_arr.at(0) = x_length/2; 
-//     wall_x_arr.at(1) = -x_length/2; 
-//     wall_x_arr.at(2) = 0; 
-//     wall_x_arr.at(3) = 0; 
+/// \brief
+/// function that sets the wall array and publishes it
+/// Input: None
+/// Output: None
+void walls()
+{
+    wall_array.markers.resize(4);
+    
+    // First wall
+    wall_array.markers[0].header.frame_id = "world";
+    wall_array.markers[0].header.stamp = ros::Time::now();
+    wall_array.markers[0].id = 1;
 
-//     wall_y_arr.resize(4);
-//     wall_y_arr.at(0) = 0;
-//     wall_y_arr.at(1) = 0;
-//     wall_y_arr.at(2) = y_length/2;
-//     wall_y_arr.at(3) = -y_length/2;
+    wall_array.markers[0].type = visualization_msgs::Marker::CUBE;
+    wall_array.markers[0].action = visualization_msgs::Marker::ADD;
 
-//     wall_array.markers.resize(4);
+    wall_array.markers[0].pose.position.x = x_length/2;
+    wall_array.markers[0].pose.position.y = 0.0;
+    wall_array.markers[0].pose.position.z = 0.0;
 
-//     for (int i = 0; i<2; i++)
-//     {
-        
-//         wall_array.markers[i].header.frame_id = "world";
-//         wall_array.markers[i].header.stamp = ros::Time::now();
-//         wall_array.markers[i].id = i;
+    tf2::Quaternion q_obs;
+    q_obs.setRPY(0, 0,0);
 
-//         wall_array.markers[i].type = visualization_msgs::Marker::CUBE;
-//         wall_array.markers[i].action = visualization_msgs::Marker::ADD;
+    wall_array.markers[0].pose.orientation.x = q_obs.x();
+    wall_array.markers[0].pose.orientation.y = q_obs.y();
+    wall_array.markers[0].pose.orientation.z = q_obs.z();
+    wall_array.markers[0].pose.orientation.w = q_obs.w();
 
-//         wall_array.markers[i].pose.position.x = wall_x_arr[i];
-//         wall_array.markers[i].pose.position.y = wall_y_arr[i];
-//         wall_array.markers[i].pose.position.z = 0.0;
-
-//         tf2::Quaternion q_obs;
-//         q_obs.setRPY(0, 0,0);
-
-//         wall_array.markers[i].pose.orientation.x = q_obs.x();
-//         wall_array.markers[i].pose.orientation.y = q_obs.y();
-//         wall_array.markers[i].pose.orientation.z = q_obs.z();
-//         wall_array.markers[i].pose.orientation.w = q_obs.w();
-
-//         wall_array.markers[i].scale.x = 2*wall_y_arr[i] + 0.25;
-//         wall_array.markers[i].scale.y = 2*wall_y_arr[i] + 0.25;
-//         wall_array.markers[i].scale.z = 0.25;
+    wall_array.markers[0].scale.x = 0.25;
+    wall_array.markers[0].scale.y = y_length;
+    wall_array.markers[0].scale.z = 0.25;
 
 
-//         wall_array.markers[i].color.r = 0;
-//         wall_array.markers[i].color.g = 1;
-//         wall_array.markers[i].color.b = 0;
-//         wall_array.markers[i].color.a = 1;
+    wall_array.markers[0].color.r = 0;
+    wall_array.markers[0].color.g = 1;
+    wall_array.markers[0].color.b = 0;
+    wall_array.markers[0].color.a = 1;
 
-//     }
+    // Second wall
+    wall_array.markers[1].header.frame_id = "world";
+    wall_array.markers[1].header.stamp = ros::Time::now();
+    wall_array.markers[1].id = 2;
 
-//    wall_marker.publish(wall_array);
-// }
+    wall_array.markers[1].type = visualization_msgs::Marker::CUBE;
+    wall_array.markers[1].action = visualization_msgs::Marker::ADD;
 
+    wall_array.markers[1].pose.position.x = -x_length/2;
+    wall_array.markers[1].pose.position.y = 0.0;
+    wall_array.markers[1].pose.position.z = 0.0;
+
+    wall_array.markers[1].pose.orientation.x = q_obs.x();
+    wall_array.markers[1].pose.orientation.y = q_obs.y();
+    wall_array.markers[1].pose.orientation.z = q_obs.z();
+    wall_array.markers[1].pose.orientation.w = q_obs.w();
+
+    wall_array.markers[1].scale.x = 0.25;
+    wall_array.markers[1].scale.y = y_length;
+    wall_array.markers[1].scale.z = 0.25;
+
+
+    wall_array.markers[1].color.r = 0;
+    wall_array.markers[1].color.g = 1;
+    wall_array.markers[1].color.b = 0;
+    wall_array.markers[1].color.a = 1;
+
+    // Third walls
+    wall_array.markers[2].header.frame_id = "world";
+    wall_array.markers[2].header.stamp = ros::Time::now();
+    wall_array.markers[2].id = 3;
+
+    wall_array.markers[2].type = visualization_msgs::Marker::CUBE;
+    wall_array.markers[2].action = visualization_msgs::Marker::ADD;
+
+    wall_array.markers[2].pose.position.x = 0.0;
+    wall_array.markers[2].pose.position.y = y_length/2;
+    wall_array.markers[2].pose.position.z = 0.0;
+
+    wall_array.markers[2].pose.orientation.x = q_obs.x();
+    wall_array.markers[2].pose.orientation.y = q_obs.y();
+    wall_array.markers[2].pose.orientation.z = q_obs.z();
+    wall_array.markers[2].pose.orientation.w = q_obs.w();
+
+    wall_array.markers[2].scale.x = x_length;
+    wall_array.markers[2].scale.y = 0.25;
+    wall_array.markers[2].scale.z = 0.25;
+
+
+    wall_array.markers[2].color.r = 0;
+    wall_array.markers[2].color.g = 1;
+    wall_array.markers[2].color.b = 0;
+    wall_array.markers[2].color.a = 1;
+
+    // Fourth wall
+    wall_array.markers[3].header.frame_id = "world";
+    wall_array.markers[3].header.stamp = ros::Time::now();
+    wall_array.markers[3].id = 4;
+
+    wall_array.markers[3].type = visualization_msgs::Marker::CUBE;
+    wall_array.markers[3].action = visualization_msgs::Marker::ADD;
+
+    wall_array.markers[3].pose.position.x = 0.0;
+    wall_array.markers[3].pose.position.y = -y_length/2;
+    wall_array.markers[3].pose.position.z = 0.0;
+
+    wall_array.markers[3].pose.orientation.x = q_obs.x();
+    wall_array.markers[3].pose.orientation.y = q_obs.y();
+    wall_array.markers[3].pose.orientation.z = q_obs.z();
+    wall_array.markers[3].pose.orientation.w = q_obs.w();
+
+    wall_array.markers[3].scale.x = x_length;
+    wall_array.markers[3].scale.y = 0.25;
+    wall_array.markers[3].scale.z = 0.25;
+
+
+    wall_array.markers[3].color.r = 0;
+    wall_array.markers[3].color.g = 1;
+    wall_array.markers[3].color.b = 0;
+    wall_array.markers[3].color.a = 1;
+
+
+   wall_marker.publish(wall_array);
+}
+
+/// \brief callback for wheel_cmd subscriber
+/// Input: 
+/// \param input - wheel command being subscribed to
+/// Output: Empty
 void sub_wheel_callback(const nuturtlebot_msgs::WheelCommands& input)
 {
     turtlelib::Vector2D u;
@@ -208,58 +283,26 @@ void sub_wheel_callback(const nuturtlebot_msgs::WheelCommands& input)
     u.x = input.left_velocity;
     u.y = input.right_velocity;
 
-    // ROS_INFO_STREAM("calculated u.x: %f" << u.x);
-    // ROS_INFO_STREAM("calculated u.y: %f" << u.y);
-
-    // ROS_INFO_STREAM("input.left_velocity: %f" << input.left_velocity);
-    // ROS_INFO_STREAM("input.right_velocity: %f" << input.right_velocity);
-
-    if(u.x>256)
-    {
-        u.x = 256;
-    }
-    if(u.x>256)
-    {
-        u.x = 256;
-    }
-    
-    if(u.y<-256)
-    {
-        u.y = -256;
-    }
-    if(u.y<-256)
-    {
-        u.y = -256;
-    }
     u.x = u.x*motor_cmd_to_radsec;
     u.y = u.y*motor_cmd_to_radsec;
 
     old_phi.left_phi += u.x/r;
     old_phi.right_phi += u.y/r;
 
-    ROS_INFO_STREAM("old_phi.left_phi: %f" << old_phi.left_phi);
-    ROS_INFO_STREAM("old_phi.right_phi: %f" << old_phi.right_phi);
-
     q = diff_drive.ForwardKin(old_phi);
 
     diff_drive = turtlelib::DiffDrive(dist, radius, old_phi, q);
 
-    ROS_INFO_STREAM("q.x: %f" << q.x);
-    ROS_INFO_STREAM("q.y: %f" << q.y);
-    ROS_INFO_STREAM("q.theta: %d" << q.phi);
-
     sensor.left_encoder = int(old_phi.left_phi/encoder_ticks_to_rad);
     sensor.right_encoder = int(old_phi.right_phi/encoder_ticks_to_rad);
 
-    // ROS_INFO_STREAM("sensor.left_encoder: %d" << encoder_ticks_to_rad);
     
-
 }
 
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "nusim");
-    ros::NodeHandle nh("~");
+    ros::NodeHandle nh;
     ros::NodeHandle red("red");
     ros::NodeHandle obstacle("obstacle");
     
@@ -331,17 +374,9 @@ int main(int argc, char** argv)
     transformStamped.transform.rotation.x = q.x();
     transformStamped.transform.rotation.y = q.y();
     transformStamped.transform.rotation.z = q.z();
-    transformStamped.transform.rotation.w = q.w();
-
-    // joint_msg.header.frame_id = "world";
-    // joint_msg.name.push_back("red_wheel_left_joint");
-    // joint_msg.name.push_back("red_wheel_right_joint");
-    // joint_msg.position.push_back(0.0);
-    // joint_msg.position.push_back(0.0);
-    // joint_msg_pub.publish(joint_msg);
+    transformStamped.transform.rotation.w = q.w();    
     
-    
-    // walls();
+    walls();
     
     while(ros::ok())
     {
@@ -354,9 +389,6 @@ int main(int argc, char** argv)
         timestep+=1;
 
         turtlelib::Config con = diff_drive.getConfig();
-
-        // ROS_INFO_STREAM("con.x: %f" << con.x);
-
         transformStamped.header.stamp = ros::Time::now();
         transformStamped.transform.translation.x = con.x;
         transformStamped.transform.translation.y = con.y;
@@ -366,7 +398,6 @@ int main(int argc, char** argv)
         transformStamped.transform.rotation.z = q.z();
         transformStamped.transform.rotation.w = q.w();
         br.sendTransform(transformStamped);
-        ROS_DEBUG("x0: %f", x0);
         
         obstacles();
         

@@ -55,6 +55,9 @@
   <build_depend>nuturtlebot_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
+  <build_depend>catch_ros</build_depend>
+
+
   <build_export_depend>sensor_msgs</build_export_depend>
   <build_export_depend>geometry_msgs</build_export_depend>
   <build_export_depend>nuturtlebot_msgs</build_export_depend>
@@ -66,6 +69,15 @@
 
   <build_depend>message_generation</build_depend>
   <build_export_depend>message_generation</build_export_depend>
+
+  <exec_depend>nuturtle_description </exec_depend>
+  <exec_depend>rviz </exec_depend>
+  <exec_depend>nusim </exec_depend>
+  <exec_depend> tf2_ros </exec_depend>
+  <exec_depend>rosserial_python</exec_depend>
+
+  <test_depend>rostest </test_depend>
+
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->

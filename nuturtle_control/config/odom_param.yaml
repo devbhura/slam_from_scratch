@@ -4,4 +4,4 @@ wheel_right: 'blue_wheel_right_joint'
 dist: 0.160
 radius: 0.033
 motor_cmd_to_radsec: 0.024
-encoder_ticks_to_rad: 0.00024
+encoder_ticks_to_rad: 0.00153398

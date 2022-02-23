@@ -1,0 +1,14 @@
+<launch>
+
+    <arg name="robot" default="localhost"/>
+
+    <machine name="turtlebot" address="$(arg robot)" user="msr" env-loader="./install/share/nuturtle_control/loader.sh"/>
+
+    <node pkg="hls_lfcd_lds_driver" type="hlds_laser_publisher" name="hlds_laser_publisher" machine="turtlebot"/>
+
+    <node pkg="rosserial_python" type="serial_node.py" name="serial_node" machine="turtlebot">
+        <param name="port" value="/dev/ttyACM0"/>
+        <param name="baud" value="115200"/>
+    </node>
+
+</launch>

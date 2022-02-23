@@ -1,0 +1,5 @@
+<launch>
+  <rosparam command="load" file="$(find nuturtle_control)/config/odom_param.yaml"/>
+  <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface"/>
+  <test pkg="nuturtle_control" type="turtle_interface_test" test-name="turtle_interface_test" />
+</launch>

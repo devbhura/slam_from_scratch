@@ -149,20 +149,19 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          blue_base_footprint:
-            blue_base_link:
-              blue_base_scan:
-                {}
-              blue_caster_back_link:
-                {}
-              blue_imu_link:
-                {}
-              blue_wheel_left_link:
-                {}
-              blue_wheel_right_link:
-                {}
           odom:
-            {}
+            blue_base_footprint:
+              blue_base_link:
+                blue_base_scan:
+                  {}
+                blue_caster_back_link:
+                  {}
+                blue_imu_link:
+                  {}
+                blue_wheel_left_link:
+                  {}
+                blue_wheel_right_link:
+                  {}
           red_base_footprint:
             red_base_link:
               red_base_scan:
@@ -234,6 +233,14 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /obstacle/wall
+      Name: MarkerArray
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -262,7 +269,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.720182418823242
+      Distance: 7.879904747009277
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1

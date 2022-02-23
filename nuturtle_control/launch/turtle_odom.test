@@ -1,0 +1,8 @@
+<launch>
+  <rosparam command="load" file="$(find nuturtle_control)/config/odom_param.yaml"/>
+  <node name="odometry" pkg="nuturtle_control" type="odometry"/>
+  <param name="robot_description" command="$(find xacro)/xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro' prefix:=blue"/>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+  <test pkg="nuturtle_control" type="turtle_odom_test_node" test-name="turtle_odom_test_node" />
+</launch>

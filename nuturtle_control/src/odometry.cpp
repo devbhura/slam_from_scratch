@@ -3,15 +3,24 @@
 
 /**
  * PARAMETERS:
- * 
+    * body_id (string): name of the body frame of the robot
+    * odom_id (string): name of the odom frame
+    * wheel_left (string): name of the left wheel joint
+    * wheel_right (string): name of the right wheel joint
+    * dist (double): half the track width of the robot
+    * radius (double): radius of the wheel of the robot
+    * x0 (double): initial x position
+    * y0 (double): initial y position
+    * theta0 (double): initial angular orientation
  * PUBLISHERS:
- * 
+    * odom_pub: publisher to /odom topic
  * SUBSCRIBERS:
- * 
+    * joint_state_sub: subscriber to the /joint_states topic
  * SERVICES:
- * 
+    * set_pose: sets the pose of the robot
  * 
  */
+
 #include "ros/ros.h"
 #include <string>
 #include "sensor_msgs/JointState.h"
@@ -30,11 +39,16 @@ static ros::Publisher odom_pub;
 static nav_msgs::Odometry odom;
 static turtlelib::DiffDrive diff_drive;
 static double radius, dist;
-static turtlelib::Config qhat;
+static turtlelib::Config qhat, c;
 static turtlelib::WheelPhi phi;
-
 static geometry_msgs::TransformStamped transformStamped;
+static turtlelib::Twist twist;
 
+/// \brief
+/// callback for joint_state subscriber
+/// Input: 
+/// \param js_msg - joint state being subscribed to
+/// Output: Empty
 void joint_state_callback(const sensor_msgs::JointState& js_msg)
 {
     
@@ -45,9 +59,16 @@ void joint_state_callback(const sensor_msgs::JointState& js_msg)
     
     qhat = diff_drive.ForwardKin(phi);
     diff_drive = turtlelib::DiffDrive(dist, radius, phi, qhat);
+    twist.xdot = c.x - qhat.x;
+    twist.ydot = c.y - qhat.y;
+    twist.thetadot = c.phi - qhat.phi;
+    c = qhat;
 
 }
 
+/// \brief function to update odom and broadcaster
+/// Input: None
+/// Output: None
 void publish_topics()
 {
     odom.header.stamp = ros::Time::now();
@@ -64,6 +85,9 @@ void publish_topics()
     odom.pose.pose.orientation.z = quat.z();
     odom.pose.pose.orientation.w = quat.w();
     
+    odom.twist.twist.linear.x = twist.xdot;
+    odom.twist.twist.linear.y = twist.ydot;
+    odom.twist.twist.angular.z = twist.thetadot;
 
     // TF 
     
@@ -83,6 +107,10 @@ void publish_topics()
 
 }
 
+//// \brief callback for set_pose service
+/// Input: 
+/// \param input - consists of x, y and phi variables 
+/// Output: bool
 bool set_pose_callback(nuturtle_control::set_pose::Request& input, nuturtle_control::set_pose::Response& response)
 {
 
@@ -113,11 +141,10 @@ int main(int argc, char** argv)
     nh.getParam("wheel_right", wheel_right);
     nh.getParam("dist", dist);
     nh.getParam("radius", radius);
-    nusim.param("x0",x0,-0.6);
-    nusim.param("y0",yinit,0.8);
-    nusim.param("theta0",theta0,0.0);
+    nh.param("x0",x0,0.0);
+    nh.param("y0",yinit,0.0);
+    nh.param("theta0",theta0,0.0);
 
-    turtlelib::Config c;
     c.x = x0;
     c.y = yinit;
     c.phi = theta0;
@@ -125,7 +152,7 @@ int main(int argc, char** argv)
     diff_drive = turtlelib::DiffDrive(dist, radius, phi, c);
 
     // subscribe to joint state
-    joint_state_sub = nh.subscribe("/joint_states", 1, joint_state_callback);
+    joint_state_sub = nh.subscribe("joint_states", 1, joint_state_callback);
     
     // Assign the publisher odom
     odom_pub = nh.advertise<nav_msgs::Odometry>("/odom", 10);
@@ -142,14 +169,14 @@ int main(int argc, char** argv)
     transformStamped.header.frame_id = odom_id;
     transformStamped.child_frame_id = "blue_base_footprint";
 
-    
+    tf2_ros::TransformBroadcaster br;
+
     while(ros::ok())
     {
         
 
         publish_topics();
         odom_pub.publish(odom);
-        tf2_ros::TransformBroadcaster br;
         br.sendTransform(transformStamped);
         ros::spinOnce();
         loop_rate.sleep();
