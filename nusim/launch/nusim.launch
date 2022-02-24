@@ -2,6 +2,8 @@
 
     <node name="nusim" pkg="nusim" type="nusim" output="screen"/>
 
+    <arg name="config_file" default="$(find nusim)/config/config_sim.yaml"/>
+
     <arg name="use_rviz" default="true"/>
     <arg name="use_jsp" default="false"/>
 
@@ -9,6 +11,8 @@
     <arg name="x" default="0"/>
     <arg name="y" default="0"/>
     <arg name="z" default="0"/>
+
+    <rosparam command="load" file="$(arg config_file)"/>
 
     <rosparam command="load" file="$(find nusim)/config/basic_world.yaml" />
     <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />

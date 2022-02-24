@@ -47,16 +47,17 @@
 #include "nuturtlebot_msgs/SensorData.h"
 #include "turtlelib/diff_drive.hpp"
 #include "turtlelib/rigid2d.hpp"
-
+#include <random>
+#include "ros/console.h"
 
 static double timestep;
 static double x, x0;
 static double y, yinit; 
 static double theta, theta0;
 static double obs_radius, x_length, y_length;
-static visualization_msgs::MarkerArray obstacles_array, wall_array;
+static visualization_msgs::MarkerArray obstacles_array, wall_array, fake_sensor;
 static std::vector<double> obstacles_x_arr, obstacles_y_arr, obstacles_theta_arr, wall_x_arr, wall_y_arr;
-static ros::Publisher obstacle_marker, wall_marker, snsr_data;
+static ros::Publisher obstacle_marker, wall_marker, snsr_data, fake_sensor_pub;
 static turtlelib::DiffDrive diff_drive;
 static double motor_cmd_to_radsec;
 static double encoder_ticks_to_rad;
@@ -65,6 +66,20 @@ static int r;
 static double dist, radius;
 static turtlelib::Config q;
 static nuturtlebot_msgs::SensorData sensor;
+static double noise_mean, noise_stdev;
+static double slip_min, slip_max;
+static std::normal_distribution<double> noise;
+static std::uniform_real_distribution<double> slip;
+static std::default_random_engine generator;
+static double basic_sensor_variance, max_range;
+static bool fake_sensor_flag = false;
+
+std::mt19937 & get_random()
+{
+    static std::random_device rd{}; 
+    static std::mt19937 mt{rd()};
+    return mt;
+}
 
 /// \brief
 /// callback for reset service that resets the positon of the robot to the original position
@@ -149,6 +164,69 @@ void obstacles()
 
 }
 
+///\brief
+/// timer callback
+/// Input: None
+/// Output: None
+void timer_callback(const ros::TimerEvent&)
+{
+
+    fake_sensor.markers.resize(obstacles_x_arr.size());
+    turtlelib::Config robot_state = diff_drive.getConfig();
+    std::normal_distribution<double> fake_sensor_noise(0.0,basic_sensor_variance);
+
+
+    for (int i = 0; i<obstacles_x_arr.size(); i++)
+    {
+        double distance = sqrt(pow(robot_state.x - obstacles_x_arr[i], 2) + pow(robot_state.y - obstacles_y_arr[i], 2));
+        
+        ROS_INFO_STREAM("distance: %f" << distance);
+        
+        fake_sensor.markers[i].header.frame_id = "world";
+        fake_sensor.markers[i].header.stamp = ros::Time::now();
+        fake_sensor.markers[i].id = i;
+
+        fake_sensor.markers[i].type = visualization_msgs::Marker::CYLINDER;
+        fake_sensor.markers[i].action = visualization_msgs::Marker::ADD;
+
+        if(distance > max_range)
+        {
+            fake_sensor.markers[i].action = visualization_msgs::Marker::DELETE;
+            // ROS_INFO_STREAM("DEL added");
+        }
+        
+        double sennoi = fake_sensor_noise(get_random());
+        ROS_INFO_STREAM("Noise: %f" << sennoi );
+        ROS_INFO_STREAM("Var: %f" << basic_sensor_variance );
+
+        fake_sensor.markers[i].pose.position.x = obstacles_x_arr[i]+sennoi;
+        fake_sensor.markers[i].pose.position.y = obstacles_y_arr[i]+sennoi;
+        fake_sensor.markers[i].pose.position.z = 0.0;
+
+        tf2::Quaternion q_obs;
+        q_obs.setRPY(0, 0, obstacles_theta_arr[i]);
+
+        fake_sensor.markers[i].pose.orientation.x = q_obs.x();
+        fake_sensor.markers[i].pose.orientation.y = q_obs.y();
+        fake_sensor.markers[i].pose.orientation.z = q_obs.z();
+        fake_sensor.markers[i].pose.orientation.w = q_obs.w();
+
+        fake_sensor.markers[i].scale.x = 2*obs_radius;
+        fake_sensor.markers[i].scale.y = 2*obs_radius;
+        fake_sensor.markers[i].scale.z = 0.25;
+
+
+        fake_sensor.markers[i].color.r = 0;
+        fake_sensor.markers[i].color.g = 1;
+        fake_sensor.markers[i].color.b = 0;
+        fake_sensor.markers[i].color.a = 1;
+
+    }
+
+    fake_sensor_flag = true;
+
+}
+
 /// \brief
 /// function that sets the wall array and publishes it
 /// Input: None
@@ -182,8 +260,8 @@ void walls()
     wall_array.markers[0].scale.z = 0.25;
 
 
-    wall_array.markers[0].color.r = 0;
-    wall_array.markers[0].color.g = 1;
+    wall_array.markers[0].color.r = 1;
+    wall_array.markers[0].color.g = 0;
     wall_array.markers[0].color.b = 0;
     wall_array.markers[0].color.a = 1;
 
@@ -209,8 +287,8 @@ void walls()
     wall_array.markers[1].scale.z = 0.25;
 
 
-    wall_array.markers[1].color.r = 0;
-    wall_array.markers[1].color.g = 1;
+    wall_array.markers[1].color.r = 1;
+    wall_array.markers[1].color.g = 0;
     wall_array.markers[1].color.b = 0;
     wall_array.markers[1].color.a = 1;
 
@@ -236,8 +314,8 @@ void walls()
     wall_array.markers[2].scale.z = 0.25;
 
 
-    wall_array.markers[2].color.r = 0;
-    wall_array.markers[2].color.g = 1;
+    wall_array.markers[2].color.r = 1;
+    wall_array.markers[2].color.g = 0;
     wall_array.markers[2].color.b = 0;
     wall_array.markers[2].color.a = 1;
 
@@ -263,8 +341,8 @@ void walls()
     wall_array.markers[3].scale.z = 0.25;
 
 
-    wall_array.markers[3].color.r = 0;
-    wall_array.markers[3].color.g = 1;
+    wall_array.markers[3].color.r = 1;
+    wall_array.markers[3].color.g = 0;
     wall_array.markers[3].color.b = 0;
     wall_array.markers[3].color.a = 1;
 
@@ -280,14 +358,26 @@ void sub_wheel_callback(const nuturtlebot_msgs::WheelCommands& input)
 {
     turtlelib::Vector2D u;
 
+    double wheel_noise = noise(get_random());
+    double eta = slip(get_random());
+
     u.x = input.left_velocity;
     u.y = input.right_velocity;
+
+    if(u.x!=0){ u.x += wheel_noise;}
+    if(u.y!=0){ u.y += wheel_noise;}
 
     u.x = u.x*motor_cmd_to_radsec;
     u.y = u.y*motor_cmd_to_radsec;
 
+    // Multiply by slip 
+    u.x = eta*u.x;
+    u.y = eta*u.y;
+
     old_phi.left_phi += u.x/r;
     old_phi.right_phi += u.y/r;
+
+
 
     q = diff_drive.ForwardKin(old_phi);
 
@@ -298,6 +388,15 @@ void sub_wheel_callback(const nuturtlebot_msgs::WheelCommands& input)
 
     
 }
+
+void checkCollision(turtlelib::Config q)
+{
+    for (int i = 0; i<obstacles_x_arr.size(); i++)
+    {
+        
+    }
+}
+
 
 int main(int argc, char** argv)
 {
@@ -318,10 +417,13 @@ int main(int argc, char** argv)
 
     // Define Publishers
     ros::Publisher pub = nh.advertise<std_msgs::UInt64>("timestep", 100);
+    ros::Timer timer_sensor = nh.createTimer(ros::Duration(0.2), timer_callback);
     // ros::Publisher joint_msg_pub = red.advertise<sensor_msgs::JointState>("joint_states", 1);
     obstacle_marker = obstacle.advertise<visualization_msgs::MarkerArray>("obs", 1, true);
     wall_marker = obstacle.advertise<visualization_msgs::MarkerArray>("wall", 1, true);
     snsr_data = red.advertise<nuturtlebot_msgs::SensorData>("sensor_data", 10);
+    fake_sensor_pub = obstacle.advertise<visualization_msgs::MarkerArray>("fake_sensor", 1, true);
+
 
     // variables from the parameter
     
@@ -340,6 +442,16 @@ int main(int argc, char** argv)
     nh.getParam("encoder_ticks_to_rad", encoder_ticks_to_rad);
     nh.getParam("track_width", dist);
     nh.getParam("wheel_radius", radius);
+    nh.param("noise_mean", noise_mean, 0.0);
+    nh.param("noise_stdev", noise_stdev, 1.0);
+    nh.param("slip_max", slip_max,1.0);
+    nh.param("slip_min", slip_min,1.0);
+    nh.param("basic_sensor_variance", basic_sensor_variance, 0.1);
+    nh.param("max_range", max_range, 2.0);
+
+    // noise and slip
+    noise.param( decltype(noise)::param_type{ noise_mean, noise_stdev } ) ;
+    slip.param( decltype(slip)::param_type{slip_min, slip_max}); 
 
     // Assign Diff Drive
     turtlelib::Config c;
@@ -400,11 +512,18 @@ int main(int argc, char** argv)
         br.sendTransform(transformStamped);
         
         obstacles();
+
+        if(fake_sensor_flag)
+        {
+            fake_sensor_pub.publish(fake_sensor);
+            fake_sensor_flag = false;
+        }
         
         snsr_data.publish(sensor);
         ros::spinOnce();
 
         loop_rate.sleep();
+        
     }
 
     return 0;

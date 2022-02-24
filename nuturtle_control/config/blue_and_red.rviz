@@ -6,9 +6,9 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /RobotModel1
+        - /TF1/Frames1
         - /MarkerArray1
-        - /RobotModel2
+        - /MarkerArray3
       Splitter Ratio: 0.5
     Tree Height: 618
   - Class: rviz/Selection
@@ -108,37 +108,37 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        All Enabled: true
+        All Enabled: false
         blue_base_footprint:
           Value: true
         blue_base_link:
-          Value: true
+          Value: false
         blue_base_scan:
-          Value: true
+          Value: false
         blue_caster_back_link:
-          Value: true
+          Value: false
         blue_imu_link:
-          Value: true
+          Value: false
         blue_wheel_left_link:
-          Value: true
+          Value: false
         blue_wheel_right_link:
-          Value: true
+          Value: false
         odom:
           Value: true
         red_base_footprint:
           Value: true
         red_base_link:
-          Value: true
+          Value: false
         red_base_scan:
-          Value: true
+          Value: false
         red_caster_back_link:
-          Value: true
+          Value: false
         red_imu_link:
-          Value: true
+          Value: false
         red_wheel_left_link:
-          Value: true
+          Value: false
         red_wheel_right_link:
-          Value: true
+          Value: false
         world:
           Value: true
       Marker Alpha: 1
@@ -241,6 +241,14 @@ Visualization Manager:
         "": true
       Queue Size: 100
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /obstacle/fake_sensor
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -269,7 +277,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 7.879904747009277
+      Distance: 3.190929412841797
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -285,9 +293,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6353974938392639
+      Pitch: 0.6403974890708923
       Target Frame: <Fixed Frame>
-      Yaw: 2.4854013919830322
+      Yaw: 2.7304017543792725
     Saved: ~
 Window Geometry:
   Displays:

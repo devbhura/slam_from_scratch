@@ -1,0 +1,6 @@
+noise_mean: 5.0
+noise_stdev: 0.5
+slip_max: 1.5
+slip_min: 1.0
+max_range: 2.0
+basic_sensor_variance: 0.01
