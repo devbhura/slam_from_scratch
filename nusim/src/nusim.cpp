@@ -35,6 +35,7 @@
 #include "std_srvs/Trigger.h"
 #include "geometry_msgs/Point.h"
 #include "sensor_msgs/JointState.h"
+#include "sensor_msgs/LaserScan.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "geometry_msgs/TransformStamped.h"
 #include "tf2/LinearMath/Quaternion.h"
@@ -57,28 +58,40 @@ static double theta, theta0;
 static double obs_radius, x_length, y_length;
 static visualization_msgs::MarkerArray obstacles_array, wall_array, fake_sensor;
 static std::vector<double> obstacles_x_arr, obstacles_y_arr, obstacles_theta_arr, wall_x_arr, wall_y_arr;
-static ros::Publisher obstacle_marker, wall_marker, snsr_data, fake_sensor_pub;
+static ros::Publisher obstacle_marker, wall_marker, snsr_data, fake_sensor_pub, lidar_pub;
 static turtlelib::DiffDrive diff_drive;
 static double motor_cmd_to_radsec;
 static double encoder_ticks_to_rad;
 static turtlelib::WheelPhi old_phi;
 static int r;
 static double dist, radius;
-static turtlelib::Config q;
+static turtlelib::Config q, q_old;
 static nuturtlebot_msgs::SensorData sensor;
 static double noise_mean, noise_stdev;
 static double slip_min, slip_max;
 static std::normal_distribution<double> noise;
 static std::uniform_real_distribution<double> slip;
 static std::default_random_engine generator;
-static double basic_sensor_variance, max_range;
+static double basic_sensor_variance, max_range, collision_radius;
 static bool fake_sensor_flag = false;
+static bool lidar_flag = false;
+static sensor_msgs::LaserScan scan;
+static double scan_angle_max, scan_angle_min, samples, scan_range_min, scan_range_max;
 
+bool checkCollision(turtlelib::Config q);
+int sgn(double v);
 std::mt19937 & get_random()
 {
     static std::random_device rd{}; 
     static std::mt19937 mt{rd()};
     return mt;
+}
+
+int sgn(double v)
+{
+    if (v < 0.0) return -1;
+    if (v > 0.0) return 1;
+    return 0;
 }
 
 /// \brief
@@ -174,15 +187,22 @@ void timer_callback(const ros::TimerEvent&)
     fake_sensor.markers.resize(obstacles_x_arr.size());
     turtlelib::Config robot_state = diff_drive.getConfig();
     std::normal_distribution<double> fake_sensor_noise(0.0,basic_sensor_variance);
+    turtlelib::Vector2D vec = {robot_state.x, robot_state.y};
+    turtlelib::Transform2D Twb(vec, robot_state.phi);
 
 
     for (int i = 0; i<obstacles_x_arr.size(); i++)
     {
         double distance = sqrt(pow(robot_state.x - obstacles_x_arr[i], 2) + pow(robot_state.y - obstacles_y_arr[i], 2));
+        turtlelib::Vector2D obs_vec = {obstacles_x_arr[i], obstacles_y_arr[i]};
+        turtlelib::Transform2D Two(obs_vec), Tbo;
+        Tbo = (Twb.inv())*Two;
+        turtlelib::Vector2D body_vec = Tbo.translation();
+
+
+        // ROS_INFO_STREAM("distance: %f" << distance);
         
-        ROS_INFO_STREAM("distance: %f" << distance);
-        
-        fake_sensor.markers[i].header.frame_id = "world";
+        fake_sensor.markers[i].header.frame_id = "red_base_footprint";
         fake_sensor.markers[i].header.stamp = ros::Time::now();
         fake_sensor.markers[i].id = i;
 
@@ -196,11 +216,17 @@ void timer_callback(const ros::TimerEvent&)
         }
         
         double sennoi = fake_sensor_noise(get_random());
-        ROS_INFO_STREAM("Noise: %f" << sennoi );
-        ROS_INFO_STREAM("Var: %f" << basic_sensor_variance );
+        // ROS_INFO_STREAM("Noise: %f" << sennoi );
+        // ROS_INFO_STREAM("Var: %f" << basic_sensor_variance );
 
-        fake_sensor.markers[i].pose.position.x = obstacles_x_arr[i]+sennoi;
-        fake_sensor.markers[i].pose.position.y = obstacles_y_arr[i]+sennoi;
+        double r = sqrt(pow(body_vec.x,2) + pow(body_vec.y,2));
+        double ang = atan2(body_vec.y,body_vec.x);
+
+        r += sennoi;
+        ang += sennoi;
+
+        fake_sensor.markers[i].pose.position.x = r*cos(ang);
+        fake_sensor.markers[i].pose.position.y = r*sin(ang);
         fake_sensor.markers[i].pose.position.z = 0.0;
 
         tf2::Quaternion q_obs;
@@ -381,6 +407,16 @@ void sub_wheel_callback(const nuturtlebot_msgs::WheelCommands& input)
 
     q = diff_drive.ForwardKin(old_phi);
 
+    bool state = checkCollision(q);
+    if(state)
+    {
+       q = q_old;
+    }
+    else
+    {
+        q_old = q;
+    }
+
     diff_drive = turtlelib::DiffDrive(dist, radius, old_phi, q);
 
     sensor.left_encoder = int(old_phi.left_phi/encoder_ticks_to_rad);
@@ -389,14 +425,93 @@ void sub_wheel_callback(const nuturtlebot_msgs::WheelCommands& input)
     
 }
 
-void checkCollision(turtlelib::Config q)
+bool checkCollision(turtlelib::Config q)
 {
+    double coll_dist;
+    bool state = false;
     for (int i = 0; i<obstacles_x_arr.size(); i++)
     {
-        
+        coll_dist = sqrt(pow(q.x - obstacles_x_arr[i],2) + pow(q.y - obstacles_y_arr[i],2));
+        if(turtlelib::almost_equal(coll_dist,(collision_radius+obs_radius), 0.01))
+        {state = true;}
     }
+
+    return state;
 }
 
+void lidar_timer_callback(const ros::TimerEvent&)
+{
+
+    scan.header.stamp = ros::Time::now();
+    scan.header.frame_id = "red_base_scan";
+    scan.angle_min = scan_angle_min;
+    scan.angle_max = scan_angle_max;
+    scan.angle_increment = 6.28/samples;
+    scan.time_increment = 0.2/samples;
+    scan.range_min = scan_range_min;
+    scan.range_max = scan_range_max;
+    scan.ranges.resize(samples);
+
+    double ang = 0.0;
+    turtlelib::Config robot_state = diff_drive.getConfig();
+    turtlelib::Vector2D vec = {robot_state.x, robot_state.y};
+    turtlelib::Transform2D Twr(vec, robot_state.phi);
+
+    for (int j = 0; j<samples; j++)
+    {
+        double x1, y1, x2, y2, D, dr, range;
+        x1 = 0.0;
+        y1 = 0.0;
+        x2 = scan_range_max*cos(ang);
+        y2 = scan_range_max*sin(ang);
+        turtlelib::Vector2D v1{x1, y1}, v2{x2, y2}, v1_obs, v2_obs;
+
+        for (int i = 0; i<obstacles_x_arr.size(); i++)
+        {
+            turtlelib::Vector2D obs_vec({obstacles_x_arr[i], obstacles_y_arr[i]});
+            turtlelib::Transform2D Two(obs_vec), Tor, Tro;
+            Tor = (Two.inv())*Twr;
+            Tro = Tor.inv();
+            v1_obs = Tor(v1);
+            v2_obs = Tor(v2);
+
+            dr = sqrt(pow(v2_obs.x - v1_obs.x,2)+pow(v2_obs.y - v1_obs.y,2));
+            D = v1_obs.x*v2_obs.y - v2_obs.x*v1_obs.y;
+
+            double delt = pow(obs_radius,2)*pow(dr,2) - pow(D, 2);
+            ROS_INFO_STREAM("delt: %f" << delt );
+            if(delt<0.0)
+            {
+                range = scan_range_max;
+            }
+            else if(delt >= 0.0)
+            {
+                double x, y, dx, dy;
+                dy = v2_obs.y - v1_obs.y;
+                dx = v2_obs.x - v1_obs.x;
+                x = (D*(dy) - sgn(dy)*dx*delt)*pow(dr,2);
+                y = (D*(dx) - abs(dy)*delt)*pow(dr,2);
+                turtlelib::Vector2D inter{x,y}, inter_r;
+                inter_r = Tro(inter);
+                range = sqrt(pow(inter_r.x,2) + pow(inter_r.y,2));
+
+            }
+
+        }
+        
+        scan.ranges[j] = range;
+
+        ang += 6.28/samples;
+        ROS_INFO_STREAM("Ang: %f" << ang );
+        if(ang >= 6.28)
+        {
+            ang = 0.0;
+        }
+    }
+
+    lidar_flag = true;
+
+}
 
 int main(int argc, char** argv)
 {
@@ -418,12 +533,13 @@ int main(int argc, char** argv)
     // Define Publishers
     ros::Publisher pub = nh.advertise<std_msgs::UInt64>("timestep", 100);
     ros::Timer timer_sensor = nh.createTimer(ros::Duration(0.2), timer_callback);
+    ros::Timer timer_lidar = nh.createTimer(ros::Duration(0.2), lidar_timer_callback);
     // ros::Publisher joint_msg_pub = red.advertise<sensor_msgs::JointState>("joint_states", 1);
     obstacle_marker = obstacle.advertise<visualization_msgs::MarkerArray>("obs", 1, true);
     wall_marker = obstacle.advertise<visualization_msgs::MarkerArray>("wall", 1, true);
     snsr_data = red.advertise<nuturtlebot_msgs::SensorData>("sensor_data", 10);
     fake_sensor_pub = obstacle.advertise<visualization_msgs::MarkerArray>("fake_sensor", 1, true);
-
+    lidar_pub = nh.advertise<sensor_msgs::LaserScan>("scan", 100);
 
     // variables from the parameter
     
@@ -448,6 +564,12 @@ int main(int argc, char** argv)
     nh.param("slip_min", slip_min,1.0);
     nh.param("basic_sensor_variance", basic_sensor_variance, 0.1);
     nh.param("max_range", max_range, 2.0);
+    nh.param("collision_radius", collision_radius, 0.11);
+    nh.param("scan_angle_min", scan_angle_min, 0.0);
+    nh.param("scan_angle_max", scan_angle_max, 6.28319);
+    nh.param("scan_range_min", scan_range_min, 0.12);
+    nh.param("scan_range_max", scan_range_max, 3.5);
+    nh.param("samples", samples, 360.0);
 
     // noise and slip
     noise.param( decltype(noise)::param_type{ noise_mean, noise_stdev } ) ;
@@ -517,6 +639,12 @@ int main(int argc, char** argv)
         {
             fake_sensor_pub.publish(fake_sensor);
             fake_sensor_flag = false;
+        }
+
+        if(lidar_flag)
+        {
+            lidar_pub.publish(scan);
+            lidar_flag = false;
         }
         
         snsr_data.publish(sensor);
