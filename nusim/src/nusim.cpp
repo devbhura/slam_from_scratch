@@ -242,7 +242,7 @@ void timer_callback(const ros::TimerEvent&)
         fake_sensor.markers[i].scale.z = 0.25;
 
 
-        fake_sensor.markers[i].color.r = 0;
+        fake_sensor.markers[i].color.r = 1;
         fake_sensor.markers[i].color.g = 1;
         fake_sensor.markers[i].color.b = 0;
         fake_sensor.markers[i].color.a = 1;
@@ -455,20 +455,22 @@ void lidar_timer_callback(const ros::TimerEvent&)
     double ang = 0.0;
     turtlelib::Config robot_state = diff_drive.getConfig();
     turtlelib::Vector2D vec = {robot_state.x, robot_state.y};
-    turtlelib::Transform2D Twr(vec, robot_state.phi);
+    turtlelib::Transform2D Twr(vec, robot_state.phi), Trw;
+    Trw = Twr.inv();
 
     for (int j = 0; j<samples; j++)
     {
-        double x1, y1, x2, y2, D, dr, range;
-        x1 = 0.0;
-        y1 = 0.0;
+        double x1, y1, x2, y2, D, dr;
+        x1 = 0.2*cos(ang);
+        y1 = 0.2*sin(ang);
         x2 = scan_range_max*cos(ang);
         y2 = scan_range_max*sin(ang);
         turtlelib::Vector2D v1{x1, y1}, v2{x2, y2}, v1_obs, v2_obs;
-
+        std::vector<double> range; 
+        range.push_back(scan_range_max - 0.1);
         for (int i = 0; i<obstacles_x_arr.size(); i++)
         {
-            turtlelib::Vector2D obs_vec({obstacles_x_arr[i], obstacles_y_arr[i]});
+            turtlelib::Vector2D obs_vec{obstacles_x_arr[i], obstacles_y_arr[i]};
             turtlelib::Transform2D Two(obs_vec), Tor, Tro;
             Tor = (Two.inv())*Twr;
             Tro = Tor.inv();
@@ -478,31 +480,78 @@ void lidar_timer_callback(const ros::TimerEvent&)
             dr = sqrt(pow(v2_obs.x - v1_obs.x,2)+pow(v2_obs.y - v1_obs.y,2));
             D = v1_obs.x*v2_obs.y - v2_obs.x*v1_obs.y;
 
-            double delt = pow(obs_radius,2)*pow(dr,2) - pow(D, 2);
-            ROS_INFO_STREAM("delt: %f" << delt );
-            if(delt<0.0)
-            {
-                range = scan_range_max;
-            }
-            else if(delt >= 0.0)
+            double delt = sqrt(pow(obs_radius,2)*pow(dr,2) - pow(D, 2));
+            // ROS_INFO_STREAM("delt: %f" << delt );
+            
+            if(delt >= 0.0)
             {
                 double x, y, dx, dy;
                 dy = v2_obs.y - v1_obs.y;
                 dx = v2_obs.x - v1_obs.x;
-                x = (D*(dy) - sgn(dy)*dx*delt)*pow(dr,2);
-                y = (D*(dx) - abs(dy)*delt)*pow(dr,2);
+                x = (D*(dy) - sgn(dy)*dx*delt)/pow(dr,2);
+                y = (-D*(dx) - abs(dy)*delt)/pow(dr,2);
                 turtlelib::Vector2D inter{x,y}, inter_r;
                 inter_r = Tro(inter);
-                range = sqrt(pow(inter_r.x,2) + pow(inter_r.y,2));
-
+                double inter_dist = sqrt(pow(inter_r.x,2) + pow(inter_r.y,2));
+                if(sqrt(pow(inter_r.x-v2_obs.x,2) + pow(inter_r.y-v2_obs.y,2)) <inter_dist){
+                    range.push_back(inter_dist);
+                }
+                x = (D*(dy) + sgn(dy)*dx*delt)/pow(dr,2);
+                y = (-D*(dx) + abs(dy)*delt)/pow(dr,2);
+                turtlelib::Vector2D inter_n{x,y};
+                inter_r = Tro(inter_n);
+                inter_dist = sqrt(pow(inter_r.x,2) + pow(inter_r.y,2));
+                if(sqrt(pow(inter_r.x-v2_obs.x,2) + pow(inter_r.y-v2_obs.y,2)) <inter_dist){
+                    range.push_back(inter_dist);
+                }
             }
 
         }
+
+        for(int k=0; k<(wall_x_arr.size()-1); k++)
+        {
+            turtlelib::Vector2D line_p3{wall_x_arr[k], wall_y_arr[k]};
+            turtlelib::Vector2D line_p4{wall_x_arr[k+1], wall_y_arr[k+1]};
+            turtlelib::Vector2D line_p3_r, line_p4_r;
+            line_p3_r = Trw(line_p3);
+            line_p4_r = Trw(line_p4);
+            double x3, y3, x4, y4;
+            x3 = line_p3.x;
+            x4 = line_p4.x;
+            y3 = line_p3.y;
+            y4 = line_p4.y;
+
+            turtlelib::Vector2D v1_w, v2_w;
+            v1_w = Twr(v1);
+            v2_w = Twr(v2);
+            x1 = v1_w.x;
+            x2 = v2_w.x;
+            y1 = v1_w.y;
+            y2 = v2_w.y;
+
+            double Px, Py, D, r_d;
+            D = ((x1 - x2)*(y3 - y4)) - ((y1-y2)*(x3 - x4));
+            Px = ((((x1*y2) - (y1*x2))*(x3-x4)) - ((x1-x2)*((x3*y4) - (y3*x4))))/D;
+            Py = ((((x1*y2) - (y1*x2))*(y3-y4)) - ((y1-y2)*((x3*y4) - (y3*x4))))/D;
+
+            turtlelib::Vector2D P_r, P_w{Px,Py};
+            // ROS_INFO_STREAM("P_w: %f" << P_w );
+            P_r = Trw(P_w);
+            // ROS_INFO_STREAM("P_r: %f" << P_r );
+            r_d = sqrt(pow(P_r.x,2)+pow(P_r.y,2));
+            // ROS_INFO_STREAM("r_d: %f" << r_d );
+            if(sqrt(pow(P_r.x - scan_range_max*cos(ang),2)+pow(P_r.y - scan_range_max*sin(ang),2)) <r_d)
+            {
+                range.push_back(abs(r_d));
+            }
+            
+
+        }
         
-        scan.ranges[j] = range;
+        scan.ranges[j] = *min_element(range.begin(), range.end());
 
         ang += 6.28/samples;
-        ROS_INFO_STREAM("Ang: %f" << ang );
+        // ROS_INFO_STREAM("Ang: %f" << ang );
         if(ang >= 6.28)
         {
             ang = 0.0;
@@ -539,7 +588,7 @@ int main(int argc, char** argv)
     wall_marker = obstacle.advertise<visualization_msgs::MarkerArray>("wall", 1, true);
     snsr_data = red.advertise<nuturtlebot_msgs::SensorData>("sensor_data", 10);
     fake_sensor_pub = obstacle.advertise<visualization_msgs::MarkerArray>("fake_sensor", 1, true);
-    lidar_pub = nh.advertise<sensor_msgs::LaserScan>("scan", 100);
+    lidar_pub = nh.advertise<sensor_msgs::LaserScan>("scan", 10, true);
 
     // variables from the parameter
     
@@ -611,6 +660,10 @@ int main(int argc, char** argv)
     transformStamped.transform.rotation.w = q.w();    
     
     walls();
+
+    // Walls marker position arrays
+    wall_x_arr = {x_length/2, -x_length/2, -x_length/2, x_length/2, x_length/2};
+    wall_y_arr = {y_length/2, y_length/2, -y_length/2, -y_length/2, y_length/2};
     
     while(ros::ok())
     {
