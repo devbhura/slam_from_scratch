@@ -8,4 +8,4 @@ scan_angle_min: 0.0
 scan_angle_max: 6.28319
 scan_angle_increment: 0.1
 scan_range_min: 0.12
-scan_range_max: 4
+scan_range_max: 3

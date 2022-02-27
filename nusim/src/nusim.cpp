@@ -453,32 +453,34 @@ void lidar_timer_callback(const ros::TimerEvent&)
     scan.ranges.resize(samples);
 
     double ang = 0.0;
-    turtlelib::Config robot_state = diff_drive.getConfig();
-    turtlelib::Vector2D vec = {robot_state.x, robot_state.y};
-    turtlelib::Transform2D Twr(vec, robot_state.phi), Trw;
-    Trw = Twr.inv();
+    
 
     for (int j = 0; j<samples; j++)
     {
+        turtlelib::Config robot_state = diff_drive.getConfig();
+        turtlelib::Vector2D vec = {robot_state.x, robot_state.y};
+        turtlelib::Transform2D Twr(vec, robot_state.phi), Trw;
+        Trw = Twr.inv();
         double x1, y1, x2, y2, D, dr;
-        x1 = 0.2*cos(ang);
-        y1 = 0.2*sin(ang);
+        x1 = 0.1*cos(ang);
+        y1 = 0.1*sin(ang);
         x2 = scan_range_max*cos(ang);
         y2 = scan_range_max*sin(ang);
-        turtlelib::Vector2D v1{x1, y1}, v2{x2, y2}, v1_obs, v2_obs;
+        turtlelib::Vector2D v1{x1, y1}, v2{x2, y2};
         std::vector<double> range; 
         range.push_back(scan_range_max - 0.1);
         for (int i = 0; i<obstacles_x_arr.size(); i++)
         {
-            turtlelib::Vector2D obs_vec{obstacles_x_arr[i], obstacles_y_arr[i]};
+            turtlelib::Vector2D obs_vec{obstacles_x_arr.at(i), obstacles_y_arr.at(i)};
             turtlelib::Transform2D Two(obs_vec), Tor, Tro;
             Tor = (Two.inv())*Twr;
             Tro = Tor.inv();
+            turtlelib::Vector2D  v1_obs, v2_obs;
             v1_obs = Tor(v1);
             v2_obs = Tor(v2);
 
-            dr = sqrt(pow(v2_obs.x - v1_obs.x,2)+pow(v2_obs.y - v1_obs.y,2));
-            D = v1_obs.x*v2_obs.y - v2_obs.x*v1_obs.y;
+            dr = sqrt(pow((v2_obs.x - v1_obs.x),2)+pow((v2_obs.y - v1_obs.y),2));
+            D = (v1_obs.x*v2_obs.y) - (v2_obs.x*v1_obs.y);
 
             double delt = sqrt(pow(obs_radius,2)*pow(dr,2) - pow(D, 2));
             // ROS_INFO_STREAM("delt: %f" << delt );
@@ -488,33 +490,34 @@ void lidar_timer_callback(const ros::TimerEvent&)
                 double x, y, dx, dy;
                 dy = v2_obs.y - v1_obs.y;
                 dx = v2_obs.x - v1_obs.x;
-                x = (D*(dy) - sgn(dy)*dx*delt)/pow(dr,2);
-                y = (-D*(dx) - abs(dy)*delt)/pow(dr,2);
+                x = ((D*(dy)) - (sgn(dy)*dx*delt))/pow(dr,2);
+                y = ((-D*(dx)) - (abs(dy)*delt))/pow(dr,2);
                 turtlelib::Vector2D inter{x,y}, inter_r;
                 inter_r = Tro(inter);
                 double inter_dist = sqrt(pow(inter_r.x,2) + pow(inter_r.y,2));
-                if(sqrt(pow(inter_r.x-v2_obs.x,2) + pow(inter_r.y-v2_obs.y,2)) <inter_dist){
-                    range.push_back(inter_dist);
+                if(sqrt(pow((inter_r.x-v2_obs.x),2) + pow((inter_r.y-v2_obs.y),2)) <inter_dist){
+                    range.push_back((inter_dist));
                 }
-                x = (D*(dy) + sgn(dy)*dx*delt)/pow(dr,2);
-                y = (-D*(dx) + abs(dy)*delt)/pow(dr,2);
+                x = ((D*(dy)) + (sgn(dy)*dx*delt))/pow(dr,2);
+                y = ((-D*(dx)) + (abs(dy)*delt))/pow(dr,2);
                 turtlelib::Vector2D inter_n{x,y};
                 inter_r = Tro(inter_n);
                 inter_dist = sqrt(pow(inter_r.x,2) + pow(inter_r.y,2));
-                if(sqrt(pow(inter_r.x-v2_obs.x,2) + pow(inter_r.y-v2_obs.y,2)) <inter_dist){
-                    range.push_back(inter_dist);
+                if(sqrt(pow((inter_r.x-v2_obs.x),2) + pow((inter_r.y-v2_obs.y),2)) <inter_dist){
+                    range.push_back((inter_dist));
                 }
             }
 
         }
-
+        
+        
         for(int k=0; k<(wall_x_arr.size()-1); k++)
         {
             turtlelib::Vector2D line_p3{wall_x_arr[k], wall_y_arr[k]};
             turtlelib::Vector2D line_p4{wall_x_arr[k+1], wall_y_arr[k+1]};
-            turtlelib::Vector2D line_p3_r, line_p4_r;
-            line_p3_r = Trw(line_p3);
-            line_p4_r = Trw(line_p4);
+            // turtlelib::Vector2D line_p3_r, line_p4_r;
+            // line_p3_r = Trw(line_p3);
+            // line_p4_r = Trw(line_p4);
             double x3, y3, x4, y4;
             x3 = line_p3.x;
             x4 = line_p4.x;
@@ -530,7 +533,7 @@ void lidar_timer_callback(const ros::TimerEvent&)
             y2 = v2_w.y;
 
             double Px, Py, D, r_d;
-            D = ((x1 - x2)*(y3 - y4)) - ((y1-y2)*(x3 - x4));
+            D = ((x1-x2)*(y3-y4)) - ((y1-y2)*(x3-x4));
             Px = ((((x1*y2) - (y1*x2))*(x3-x4)) - ((x1-x2)*((x3*y4) - (y3*x4))))/D;
             Py = ((((x1*y2) - (y1*x2))*(y3-y4)) - ((y1-y2)*((x3*y4) - (y3*x4))))/D;
 
@@ -542,11 +545,12 @@ void lidar_timer_callback(const ros::TimerEvent&)
             // ROS_INFO_STREAM("r_d: %f" << r_d );
             if(sqrt(pow(P_r.x - scan_range_max*cos(ang),2)+pow(P_r.y - scan_range_max*sin(ang),2)) <r_d)
             {
-                range.push_back(abs(r_d));
+                range.push_back((r_d));
             }
             
 
         }
+        
         
         scan.ranges[j] = *min_element(range.begin(), range.end());
 

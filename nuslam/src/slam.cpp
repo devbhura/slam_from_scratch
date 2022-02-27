@@ -24,11 +24,12 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "geometry_msgs/TransformStamped.h"
 #include "tf2/LinearMath/Quaternion.h"
+#include "visualization_msgs/MarkerArray.h"
 #include "turtlelib/diff_drive.hpp"
 #include "turtlelib/rigid2d.hpp"
 #include "nuturtle_control/set_pose.h"
 
-static ros::Subscriber joint_state_sub;
+static ros::Subscriber joint_state_sub, fake_sensor_sub;
 static ros::Publisher odom_pub;
 static nav_msgs::Odometry odom;
 static turtlelib::DiffDrive diff_drive;
@@ -96,27 +97,29 @@ void publish_topics()
     transformStamped.transform.rotation.z = quat.z();
     transformStamped.transform.rotation.w = quat.w();
 
-    
-
-
 }
 
-//// \brief callback for set_pose service
+/// \brief
+/// callback for fake sensor subscriber
 /// Input: 
-/// \param input - consists of x, y and phi variables 
-/// Output: bool
-bool set_pose_callback(nuturtle_control::set_pose::Request& input, nuturtle_control::set_pose::Response& response)
+/// \param obstacle_msg - Marker Array message being subscribed to
+/// Output: Empty
+void fake_sensor_callback(const visualization_msgs::MarkerArray& obstacle_msg)
 {
+    int obstacle_size = obstacle_msg.markers.size();
 
-    qhat.x = input.x;
-    qhat.y = input.y;
-    qhat.phi = input.phi;
-    phi.left_phi = 0.0;
-    phi.right_phi = 0.0;
-    diff_drive = turtlelib::DiffDrive(dist, radius, phi, qhat);
-    return true;
+    for(int i = 0; i<obstacle_size; i++)
+    {
+        double x, y, r, phi;
+        x = obstacle_msg.markers.at(i).pose.position.x;
+        y = obstacle_msg.markers.at(i).pose.position.y;
 
+        r = sqrt(pow(x,2)+pow(y,2));
+        phi = atan2(y,x);
+
+    }
 }
+
 
 int main(int argc, char** argv)
 {
@@ -147,12 +150,10 @@ int main(int argc, char** argv)
 
     // subscribe to joint state
     joint_state_sub = nh.subscribe("joint_states", 1, joint_state_callback);
-    
+    fake_sensor_sub = nh.subscribe("obstacle/fake_sensor", 5, fake_sensor_callback);
+
     // Assign the publisher odom
     odom_pub = nh.advertise<nav_msgs::Odometry>("/odom", 10);
-
-    //Define services
-    ros::ServiceServer set_pose = nh.advertiseService("set_pose", set_pose_callback);
 
     // Odom message
     odom.header.frame_id = body_id;
