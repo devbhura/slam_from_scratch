@@ -35,12 +35,13 @@ static ros::Publisher odom_pub;
 static nav_msgs::Odometry odom;
 static turtlelib::DiffDrive diff_drive;
 static double radius, dist;
-static turtlelib::Config qhat, c;
+static turtlelib::Config qhat, c, slam_config;
 static turtlelib::WheelPhi phi;
 static geometry_msgs::TransformStamped transformStamped;
 static turtlelib::Twist twist;
 static std::vector<std::vector<double>> measurement;
 static slam::ekf ekf_slam;
+
 
 void initialize();
 
@@ -131,6 +132,25 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray& obstacle_msg)
 
 void slam_timer_callback(const ros::TimerEvent&)
 {
+    int m = measurement.size();
+    for(int i = 0; i<m; i++)
+    {   
+        turtlelib::Twist u = twist;
+        arma::Mat<double> q_predict =  ekf_slam.predict_q(u);
+        arma::Mat<double> A = ekf_slam.calc_A(u); 
+        ekf_slam.predict();
+        ekf_slam.calc_H(i);
+        arma::Mat<double> m;
+        m = {measurement[i][0], measurement[i][1]}; 
+        arma::Mat<double> q = ekf_slam.update(m);
+        slam_config.phi = q(0);
+        slam_config.x = q(1);
+        slam_config.y = q(2);
+    }
+}
+
+void publish_slam()
+{
 
 }
 
@@ -162,7 +182,15 @@ void initialize()
     Sigma_0 = join_cols(Sigma_0,join_rows(zeros2n_3,Sigma_0m)); 
     ekf_slam.ekf_size(m_size);
     ekf_slam.initial_state(q_0, Sigma_0); 
-
+    
+    arma::Mat<double> Q = {{10, 0, 0},
+                           {0, 10, 0}, 
+                           {0, 0, 10}}; 
+    
+    arma::Mat<double> R = {{1, 0},
+                           {0, 1}}; 
+    ekf_slam.setQ(Q); 
+    ekf_slam.setR(R); 
 }
 
 int main(int argc, char** argv)
@@ -207,11 +235,11 @@ int main(int argc, char** argv)
 
     // Transform definition
     transformStamped.header.stamp = ros::Time::now();
-    transformStamped.header.frame_id = odom_id;
+    transformStamped.header.frame_id = "world";
     transformStamped.child_frame_id = "blue_base_footprint";
 
     tf2_ros::TransformBroadcaster br;
-
+    initialize();
     while(ros::ok())
     {
         

@@ -149,14 +149,15 @@ namespace slam
         Sigma_predict = A*Sigma_previous*(A.t()) + Q;
     }
 
-    void ekf::update(arma::Mat<double> z_measured, arma::Mat<double> z_predict)
+    arma::Mat<double> ekf::update(arma::Mat<double> z_measured)
     {
-        K = (Sigma_predict*(H.t()))*inv(H*Sigma_previous*(H.t()) + R);
-        q_update = q_predict + K*(z_measured  - z_predict);
+        K = (Sigma_predict*(H.t()))*inv((H*Sigma_predict*(H.t())) + R);
+        q_update = q_predict + (K*(z_measured  - z_predict));
         Sigma_update = (I - K*H)*Sigma_predict;
 
-        
+        q_previous = q_update; 
         Sigma_previous = Sigma_update;
+        return q_previous; 
     }
 
 }

@@ -59,7 +59,7 @@ namespace slam
             arma::Mat<double> calc_H(int j);
 
             void predict();
-            void update(arma::Mat<double> z_measured, arma::Mat<double> z_predict);
+            arma::Mat<double> update(arma::Mat<double> z_measured);
 
     };
 
