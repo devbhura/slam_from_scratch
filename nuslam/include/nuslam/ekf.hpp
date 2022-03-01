@@ -3,17 +3,18 @@
 
 #include <math.h>
 #include <armadillo>
+#include "turtlelib/rigid2d.hpp"
 /// \file
 /// \brief launches turtlebot3 and obstacles in rviz scene for visualization
 
 
-namespace ekf
+namespace slam
 {
 
     class ekf
     {
         private:
-
+            double obs_size;
             arma::Mat<double> Q = arma::eye(3,3);
             arma::Mat<double> R = arma::eye(2,2);
             arma::Mat<double> A = arma::zeros(3,3);
@@ -25,13 +26,17 @@ namespace ekf
             arma::Mat<double> Sigma_update; 
             arma::Mat<double> q_update;
             arma::Mat<double> K;
-
+            arma::Mat<double> q_previous;
+            arma::Mat<double> I;
 
 
         public:
 
-            /// \brief Initialize an ekf model 
+            /// \brief initialize
             ekf();
+
+            /// \brief initialize to the correct size
+            ekf(int size); 
 
             /// \brief Set the Q matrix
             void setQ(arma::Mat<double> Q);
@@ -48,14 +53,14 @@ namespace ekf
             /// \brief set initial state and covariance matrices
             void initial_state(arma::Mat<double> x_0, arma::Mat<double> Sigma_0);
 
+            arma::Mat<double> predict_q(turtlelib::Twist u);
+            arma::Mat<double> calc_A(turtlelib::Twist u);
+            arma::Mat<double> calc_H(turtlelib::Vector2D delt);
+
             void predict();
             void update(arma::Mat<double> z_measured, arma::Mat<double> z_predict);
 
-            arma::mat
-
-            
-
-    }
+    };
 
 }
 

@@ -27,7 +27,8 @@
 #include "visualization_msgs/MarkerArray.h"
 #include "turtlelib/diff_drive.hpp"
 #include "turtlelib/rigid2d.hpp"
-#include "nuturtle_control/set_pose.h"
+#include "nuslam/ekf.hpp"
+#include <iostream>
 
 static ros::Subscriber joint_state_sub, fake_sensor_sub;
 static ros::Publisher odom_pub;
@@ -38,6 +39,10 @@ static turtlelib::Config qhat, c;
 static turtlelib::WheelPhi phi;
 static geometry_msgs::TransformStamped transformStamped;
 static turtlelib::Twist twist;
+static std::vector<std::vector<double>> measurement;
+static slam::ekf ekf_slam;
+
+void initialize();
 
 /// \brief
 /// callback for joint_state subscriber
@@ -108,6 +113,8 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray& obstacle_msg)
 {
     int obstacle_size = obstacle_msg.markers.size();
 
+    measurement.resize(obstacle_size, std::vector<double>(2));
+
     for(int i = 0; i<obstacle_size; i++)
     {
         double x, y, r, phi;
@@ -117,9 +124,46 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray& obstacle_msg)
         r = sqrt(pow(x,2)+pow(y,2));
         phi = atan2(y,x);
 
+        measurement[i][0] = r;
+        measurement[i][1] = phi;
     }
 }
 
+void slam_timer_callback(const ros::TimerEvent&)
+{
+
+}
+
+void initialize()
+{
+    //initialize ekf slam object
+    turtlelib::Config con = diff_drive.getConfig();
+    arma::Mat<double> q_0; 
+    q_0 = {con.phi, con.x, con.y};
+    arma::Mat<double> m_0;
+    int m_size = measurement.size();
+
+    for(int i=0; i<m_size; i++)
+    {
+        double r, phi_m; 
+        r = measurement[i][0];
+        phi_m = measurement[i][1];
+        m_0 = {(con.x + (r*cos(phi_m + double(con.phi)))), (con.y + (r*sin(phi_m + double(con.phi)))) };
+        q_0 = join_cols(q_0, m_0);
+    }
+
+    arma::Mat<double> Sigma_0q = arma::zeros(3,3);
+    arma::Mat<double> Sigma_0m = arma::ones(2*m_size,2*m_size);
+    Sigma_0m = Sigma_0m*200; 
+    arma::Mat<double> zeros2n_3 = arma::zeros(2*m_size,3);
+    arma::Mat<double> zeros3_2n = arma::zeros(3,2*m_size);
+
+    arma::Mat<double> Sigma_0 = join_rows(Sigma_0q, zeros3_2n);
+    Sigma_0 = join_cols(Sigma_0,join_rows(zeros2n_3,Sigma_0m)); 
+    // ekf_slam(m_size);
+    ekf_slam.initial_state(q_0, Sigma_0); 
+
+}
 
 int main(int argc, char** argv)
 {
@@ -148,9 +192,11 @@ int main(int argc, char** argv)
 
     diff_drive = turtlelib::DiffDrive(dist, radius, phi, c);
 
+    
     // subscribe to joint state
     joint_state_sub = nh.subscribe("joint_states", 1, joint_state_callback);
     fake_sensor_sub = nh.subscribe("obstacle/fake_sensor", 5, fake_sensor_callback);
+    ros::Timer slam_timer = nh.createTimer(ros::Duration(0.2), slam_timer_callback);
 
     // Assign the publisher odom
     odom_pub = nh.advertise<nav_msgs::Odometry>("/odom", 10);
