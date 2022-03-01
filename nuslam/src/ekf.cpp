@@ -12,7 +12,7 @@ namespace slam
 
     }
 
-    ekf::ekf(int size)
+    void ekf::ekf_size(int size)
     {
         obs_size = size;
         int q_len = 3+2*obs_size;
@@ -27,6 +27,7 @@ namespace slam
         q_update = arma::zeros(q_len,1);
         q_previous = arma::zeros(q_len,1);
         I = arma::eye(q_len,q_len);
+        z_predict = arma::zeros(2,1); 
     }
 
     /// \brief Set the Q matrix
@@ -106,12 +107,32 @@ namespace slam
     /// \brief Calculate the H matrix
     arma::Mat<double> ekf::calc_H(int j)
     {
-        double mx = q_predict[2 + 2*(j)]
-        arma::Mat<double> H; 
-        double d = pow(delt.x,2) + pow(delt.y, 2);
+        double mx = q_predict[3 + 2*j]; 
+        double my = q_predict[4 + 2*j]; 
+        double theta = q_predict[0]; 
+        double x = q_predict[1];
+        double y = q_predict[2];
+        
+        z_predict(0) = sqrt(pow((mx - x),2)+ pow((my-y),2));
+        z_predict(1) = atan2((my-y),(mx-x)) - theta;
 
-        H = {{0, -delt.x/sqrt(d), -delt.y/sqrt(d)},
-             {-1, delt.y/d, -delt.x/d}};
+        double delx = mx - x; 
+        double dely = my - y;
+
+        arma::Mat<double> H_q; 
+        double d = pow(delx,2) + pow(dely, 2);
+
+        H_q = {{0, -delx/sqrt(d), -dely/sqrt(d)},
+               {-1, dely/d, -delx/d}};
+        
+        arma::Mat<double> H_m = arma::zeros(2,obs_size); 
+        int index = 2*j;
+        H_m(0,index) = delx/sqrt(d);
+        H_m(1,index) = -dely/d;
+        H_m(0,index+1) = dely/sqrt(d);
+        H_m(1,index+1) = delx/d;
+
+        H = join_rows(H_q, H_m); 
 
         return H; 
     }

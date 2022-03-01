@@ -160,7 +160,7 @@ void initialize()
 
     arma::Mat<double> Sigma_0 = join_rows(Sigma_0q, zeros3_2n);
     Sigma_0 = join_cols(Sigma_0,join_rows(zeros2n_3,Sigma_0m)); 
-    // ekf_slam(m_size);
+    ekf_slam.ekf_size(m_size);
     ekf_slam.initial_state(q_0, Sigma_0); 
 
 }

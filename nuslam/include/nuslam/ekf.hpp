@@ -28,15 +28,16 @@ namespace slam
             arma::Mat<double> K;
             arma::Mat<double> q_previous;
             arma::Mat<double> I;
+            arma::Mat<double> z_predict;
 
 
         public:
 
             /// \brief initialize
-            ekf();
+            explicit ekf();
 
             /// \brief initialize to the correct size
-            ekf(int size); 
+            void ekf_size(int size); 
 
             /// \brief Set the Q matrix
             void setQ(arma::Mat<double> Q);
@@ -55,7 +56,7 @@ namespace slam
 
             arma::Mat<double> predict_q(turtlelib::Twist u);
             arma::Mat<double> calc_A(turtlelib::Twist u);
-            arma::Mat<double> calc_H(turtlelib::Vector2D delt);
+            arma::Mat<double> calc_H(int j);
 
             void predict();
             void update(arma::Mat<double> z_measured, arma::Mat<double> z_predict);
