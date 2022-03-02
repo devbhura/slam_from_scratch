@@ -29,6 +29,7 @@
 #include "turtlelib/rigid2d.hpp"
 #include "nuslam/ekf.hpp"
 #include <iostream>
+#include <ros/console.h>
 
 static ros::Subscriber joint_state_sub, fake_sensor_sub;
 static ros::Publisher odom_pub;
@@ -37,11 +38,11 @@ static turtlelib::DiffDrive diff_drive;
 static double radius, dist;
 static turtlelib::Config qhat, c, slam_config;
 static turtlelib::WheelPhi phi;
-static geometry_msgs::TransformStamped transformStamped;
+static geometry_msgs::TransformStamped transformStamped, map2odom_trans, odom2green_trans;
 static turtlelib::Twist twist;
 static std::vector<std::vector<double>> measurement;
 static slam::ekf ekf_slam;
-
+static bool slam_flag = false; 
 
 void initialize();
 
@@ -140,8 +141,9 @@ void slam_timer_callback(const ros::TimerEvent&)
         arma::Mat<double> A = ekf_slam.calc_A(u); 
         ekf_slam.predict();
         ekf_slam.calc_H(i);
-        arma::Mat<double> m;
-        m = {measurement[i][0], measurement[i][1]}; 
+        arma::Mat<double> m(2,1);
+        m(0) = measurement[i][0];
+        m(1) =  measurement[i][1]; 
         arma::Mat<double> q = ekf_slam.update(m);
         slam_config.phi = q(0);
         slam_config.x = q(1);
@@ -151,6 +153,37 @@ void slam_timer_callback(const ros::TimerEvent&)
 
 void publish_slam()
 {
+    turtlelib::Config odom_q = diff_drive.getConfig(); 
+    turtlelib::Transform2D odom2green_tf{turtlelib::Vector2D{odom_q.x, odom_q.y}, odom_q.phi}; 
+    
+    // odom to green base footprint transform
+    odom2green_trans.header.stamp = ros::Time::now();
+    odom2green_trans.transform.translation.x = odom_q.x;
+    odom2green_trans.transform.translation.y = odom_q.y;
+    odom2green_trans.transform.translation.z = 0.0;
+    tf2::Quaternion quat;
+    quat.setRPY(0, 0, odom_q.phi);
+    odom2green_trans.transform.rotation.x = quat.x();
+    odom2green_trans.transform.rotation.y = quat.y();
+    odom2green_trans.transform.rotation.z = quat.z();
+    odom2green_trans.transform.rotation.w = quat.w();
+
+    turtlelib::Transform2D map2green_tf{turtlelib::Vector2D{slam_config.x, slam_config.y}, slam_config.phi};
+    turtlelib::Transform2D map2odom_tf; 
+    map2odom_tf = map2green_tf*(odom2green_tf.inv()); 
+
+    turtlelib::Vector2D map2odom_vec = map2odom_tf.translation(); 
+    double map2odom_ang = map2odom_tf.rotation(); 
+    map2odom_trans.header.stamp = ros::Time::now();
+    map2odom_trans.transform.translation.x = map2odom_vec.x;
+    map2odom_trans.transform.translation.y = map2odom_vec.y;
+    map2odom_trans.transform.translation.z = 0.0;
+    
+    quat.setRPY(0, 0, map2odom_ang);
+    map2odom_trans.transform.rotation.x = quat.x();
+    map2odom_trans.transform.rotation.y = quat.y();
+    map2odom_trans.transform.rotation.z = quat.z();
+    map2odom_trans.transform.rotation.w = quat.w();
 
 }
 
@@ -158,28 +191,36 @@ void initialize()
 {
     //initialize ekf slam object
     turtlelib::Config con = diff_drive.getConfig();
-    arma::Mat<double> q_0; 
-    q_0 = {con.phi, con.x, con.y};
-    arma::Mat<double> m_0;
+    arma::Mat<double> q_0(3,1); 
+    q_0(0) = con.phi;
+    q_0(1) = con.x; 
+    q_0(2) = con.y;
+    arma::Mat<double> m_0 = arma::zeros(2,1);
     int m_size = measurement.size();
-
+    
     for(int i=0; i<m_size; i++)
     {
         double r, phi_m; 
         r = measurement[i][0];
         phi_m = measurement[i][1];
-        m_0 = {(con.x + (r*cos(phi_m + double(con.phi)))), (con.y + (r*sin(phi_m + double(con.phi)))) };
-        q_0 = join_cols(q_0, m_0);
+        m_0(0) = (con.x + (r*cos(phi_m + double(con.phi)))); 
+        m_0(1) = (con.y + (r*sin(phi_m + double(con.phi))));
+        q_0 = arma::join_cols(q_0, m_0);
+        
     }
+
+    q_0.print(std::cout << "q_0"); 
+
 
     arma::Mat<double> Sigma_0q = arma::zeros(3,3);
     arma::Mat<double> Sigma_0m = arma::ones(2*m_size,2*m_size);
     Sigma_0m = Sigma_0m*200; 
     arma::Mat<double> zeros2n_3 = arma::zeros(2*m_size,3);
     arma::Mat<double> zeros3_2n = arma::zeros(3,2*m_size);
+    arma::Mat<double> zeros2n_2n = arma::zeros(2*m_size, 2*m_size);
 
-    arma::Mat<double> Sigma_0 = join_rows(Sigma_0q, zeros3_2n);
-    Sigma_0 = join_cols(Sigma_0,join_rows(zeros2n_3,Sigma_0m)); 
+    arma::Mat<double> Sigma_0 = arma::join_rows(Sigma_0q, zeros3_2n);
+    Sigma_0 = arma::join_cols(Sigma_0,arma::join_rows(zeros2n_3,Sigma_0m)); 
     ekf_slam.ekf_size(m_size);
     ekf_slam.initial_state(q_0, Sigma_0); 
     
@@ -187,10 +228,15 @@ void initialize()
                            {0, 10, 0}, 
                            {0, 0, 10}}; 
     
+    arma::Mat<double> Q_bar = arma::join_cols(Q, zeros2n_3); 
+    Q_bar = arma::join_rows(Q_bar, arma::join_cols(zeros3_2n,zeros2n_2n)); 
+    
     arma::Mat<double> R = {{1, 0},
                            {0, 1}}; 
-    ekf_slam.setQ(Q); 
+    ekf_slam.setQ(Q_bar); 
     ekf_slam.setR(R); 
+
+    slam_flag = true; 
 }
 
 int main(int argc, char** argv)
@@ -238,15 +284,41 @@ int main(int argc, char** argv)
     transformStamped.header.frame_id = "world";
     transformStamped.child_frame_id = "blue_base_footprint";
 
+    // map2odom
+    map2odom_trans.header.frame_id = "map";
+    map2odom_trans.child_frame_id = "odom"; 
+    
+    // odom2green
+    odom2green_trans.header.frame_id = "odom"; 
+    odom2green_trans.child_frame_id = "green_base_footprint"; 
+
+
     tf2_ros::TransformBroadcaster br;
-    initialize();
+    
     while(ros::ok())
     {
-        
+        if(measurement.size()>1)
+        {
+            if(slam_flag)
+            {
 
+            }
+            else
+            {
+                initialize();
+            }
+            
+        }
+        if(slam_flag)
+        {
+            publish_slam();
+        }
+        
         publish_topics();
         odom_pub.publish(odom);
         br.sendTransform(transformStamped);
+        br.sendTransform(map2odom_trans);
+        br.sendTransform(odom2green_trans); 
         ros::spinOnce();
         loop_rate.sleep();
         

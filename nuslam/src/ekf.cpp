@@ -4,6 +4,7 @@
 #include "nuslam/ekf.hpp"
 #include "turtlelib/rigid2d.hpp"
 #include <cmath>
+#include <iostream>
 
 namespace slam
 {
@@ -14,6 +15,7 @@ namespace slam
 
     void ekf::ekf_size(int size)
     {
+
         obs_size = size;
         int q_len = 3+2*obs_size;
         Q = arma::eye(q_len,q_len);
@@ -57,21 +59,25 @@ namespace slam
     /// \brief calculate state prediction
     arma::Mat<double> ekf::predict_q(turtlelib::Twist u)
     {
-        arma::Mat<double> update;
+        arma::Mat<double> update = arma::zeros(3,1);
 
         if(u.thetadot == 0.0)
         {
-            update = {0, u.xdot*cos(q_previous(0)),  u.xdot*sin(q_previous(0)) };
+            update(0) = 0.0;  
+            update(1) = u.xdot*cos(q_previous(0)); 
+            update(2) = u.xdot*sin(q_previous(0));
         }
         else
         {
-            update = {u.thetadot, (-u.xdot*sin(q_previous(0))/u.thetadot) + (u.xdot*sin((q_previous(0)+u.thetadot))/u.thetadot), (u.xdot*cos(q_previous(0))/u.thetadot) - (u.xdot*cos((q_previous(0)+u.thetadot))/u.thetadot)};
+            update(0) = u.thetadot;  
+            update(1) = (-u.xdot*sin(q_previous(0))/u.thetadot) + (u.xdot*sin((q_previous(0)+u.thetadot))/u.thetadot); 
+            update(2) = (u.xdot*cos(q_previous(0))/u.thetadot) - (u.xdot*cos((q_previous(0)+u.thetadot))/u.thetadot);
         }
         
         arma::Mat<double> update_zeros = arma::zeros(2*obs_size, 1); 
-        update = join_cols(update, update_zeros); 
-
-        q_predict = q_previous + update;
+        arma::Mat<double> updated = arma::join_cols(update, update_zeros); 
+        updated.print(std::cout << "updated"); 
+        q_predict = q_previous + updated;
 
         return q_predict;
     }
@@ -95,8 +101,9 @@ namespace slam
         arma::Mat<double> zeros2n_3 = arma::zeros(2*obs_size,3);
         arma::Mat<double> zeros3_2n = arma::zeros(3,2*obs_size);
         arma::Mat<double> zeros2n_2n = arma::zeros(2*obs_size, 2*obs_size); 
-        A_q = join_rows(A_q, zeros3_2n); 
-        A = join_cols(A_q, join_rows(zeros2n_3, zeros2n_2n)); 
+        A_q = arma::join_rows(A_q, zeros3_2n); 
+        arma::Mat<double> zero2n_2n3 = arma::join_rows(zeros2n_3, zeros2n_2n);
+        A = arma::join_cols(A_q, zero2n_2n3); 
 
         A += I;
         
@@ -121,18 +128,23 @@ namespace slam
 
         arma::Mat<double> H_q; 
         double d = pow(delx,2) + pow(dely, 2);
-
+        // arma::Mat<double> H_q(3,2); 
+        // H_q(0,0) = 0.0;
+        // H_q(1,0) = -1.0;
+        // H_q(0,1) = -delx/sqrt(d);
+        // H_q(1,1) = dely/d;
+        // H_q()
         H_q = {{0, -delx/sqrt(d), -dely/sqrt(d)},
                {-1, dely/d, -delx/d}};
         
-        arma::Mat<double> H_m = arma::zeros(2,obs_size); 
+        arma::Mat<double> H_m = arma::zeros(2,2*obs_size); 
         int index = 2*j;
         H_m(0,index) = delx/sqrt(d);
         H_m(1,index) = -dely/d;
         H_m(0,index+1) = dely/sqrt(d);
         H_m(1,index+1) = delx/d;
 
-        H = join_rows(H_q, H_m); 
+        H = arma::join_rows(H_q, H_m); 
 
         return H; 
     }
@@ -151,6 +163,8 @@ namespace slam
 
     arma::Mat<double> ekf::update(arma::Mat<double> z_measured)
     {
+        H.print(std::cout << "H"); 
+        Sigma_predict.print(std::cout<<"Sigma Pred"); 
         K = (Sigma_predict*(H.t()))*inv((H*Sigma_predict*(H.t())) + R);
         q_update = q_predict + (K*(z_measured  - z_predict));
         Sigma_update = (I - K*H)*Sigma_predict;
