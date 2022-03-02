@@ -41,7 +41,7 @@
 
         <node if="$(eval arg('cmd_src') == 'circle')" name="circle" pkg="nuturtle_control" type="circle"/>
 
-        <node name="rviz" pkg="rviz" type="rviz"/>
+        <node name="rviz" pkg="rviz" type="rviz" args="-f world -d $(find nuslam)/config/slam.rviz" required="true"/>
 
     </group>
 

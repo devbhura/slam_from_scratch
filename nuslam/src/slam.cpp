@@ -58,13 +58,15 @@ void joint_state_callback(const sensor_msgs::JointState& js_msg)
     phi.left_phi = js_msg.position.at(0);
     phi.right_phi = js_msg.position.at(1);
 
-    
+    twist = diff_drive.getTwist(phi); 
     qhat = diff_drive.ForwardKin(phi);
+    
     diff_drive = turtlelib::DiffDrive(dist, radius, phi, qhat);
-    twist.xdot = c.x - qhat.x;
-    twist.ydot = c.y - qhat.y;
-    twist.thetadot = c.phi - qhat.phi;
-    c = qhat;
+    
+    // twist.xdot = c.x - qhat.x;
+    // twist.ydot = c.y - qhat.y;
+    // twist.thetadot = c.phi - qhat.phi;
+    // c = qhat;
 
 }
 
@@ -209,7 +211,7 @@ void initialize()
         
     }
 
-    q_0.print(std::cout << "q_0"); 
+    // q_0.print(std::cout << "q_0"); 
 
 
     arma::Mat<double> Sigma_0q = arma::zeros(3,3);
@@ -224,15 +226,15 @@ void initialize()
     ekf_slam.ekf_size(m_size);
     ekf_slam.initial_state(q_0, Sigma_0); 
     
-    arma::Mat<double> Q = {{10, 0, 0},
-                           {0, 10, 0}, 
-                           {0, 0, 10}}; 
+    arma::Mat<double> Q = {{100, 0, 0},
+                           {0, 100, 0}, 
+                           {0, 0, 100}}; 
     
     arma::Mat<double> Q_bar = arma::join_cols(Q, zeros2n_3); 
     Q_bar = arma::join_rows(Q_bar, arma::join_cols(zeros3_2n,zeros2n_2n)); 
     
-    arma::Mat<double> R = {{1, 0},
-                           {0, 1}}; 
+    arma::Mat<double> R = {{10, 0},
+                           {0, 0.5}}; 
     ekf_slam.setQ(Q_bar); 
     ekf_slam.setR(R); 
 

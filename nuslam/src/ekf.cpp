@@ -76,7 +76,7 @@ namespace slam
         
         arma::Mat<double> update_zeros = arma::zeros(2*obs_size, 1); 
         arma::Mat<double> updated = arma::join_cols(update, update_zeros); 
-        updated.print(std::cout << "updated"); 
+        // updated.print(std::cout << "updated"); 
         q_predict = q_previous + updated;
 
         return q_predict;
@@ -163,10 +163,12 @@ namespace slam
 
     arma::Mat<double> ekf::update(arma::Mat<double> z_measured)
     {
-        H.print(std::cout << "H"); 
-        Sigma_predict.print(std::cout<<"Sigma Pred"); 
+        // H.print(std::cout << "H"); 
+        // Sigma_predict.print(std::cout<<"Sigma Pred"); 
         K = (Sigma_predict*(H.t()))*inv((H*Sigma_predict*(H.t())) + R);
-        q_update = q_predict + (K*(z_measured  - z_predict));
+        arma::Mat<double> z_diff = z_measured  - z_predict; 
+        z_diff(1) = turtlelib::normalize_angle(z_diff(1)); 
+        q_update = q_predict + (K*(z_diff));
         Sigma_update = (I - K*H)*Sigma_predict;
 
         q_previous = q_update; 

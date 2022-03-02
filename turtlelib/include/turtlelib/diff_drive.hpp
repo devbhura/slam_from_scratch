@@ -62,6 +62,9 @@ namespace turtlelib
             /// \return the config
             Config getConfig() const;
 
+            Twist getTwist(WheelPhi newphi); 
+            
+
 
     };
 }
