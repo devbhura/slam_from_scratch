@@ -58,11 +58,17 @@ void initialize();
 void joint_state_callback(const sensor_msgs::JointState& js_msg)
 {
     
-
     phi.left_phi = js_msg.position.at(0);
     phi.right_phi = js_msg.position.at(1);
+    double lef_vel = js_msg.velocity.at(0); 
+    double right_vel = js_msg.velocity.at(1); 
+    // ROS_WARN("%f %f",lef_vel,right_vel);
+    turtlelib::WheelPhi wheel_speed{lef_vel, right_vel}; 
+    // ROS_WARN("N");
 
-    twist = diff_drive.getTwist(phi); 
+    twist = diff_drive.getTwist(wheel_speed); 
+    // twist = diff_drive.getTwist(phi); 
+    // ROS_INFO_STREAM("Twist from diff_drive" << twist); 
     qhat = diff_drive.ForwardKin(phi);
     
     diff_drive = turtlelib::DiffDrive(dist, radius, phi, qhat);
@@ -111,7 +117,7 @@ void publish_topics()
     transformStamped.transform.rotation.w = quat.w();
 
     // Path
-    green_path_pub.publish(green_path); 
+    // green_path_pub.publish(green_path); 
 }
 
 /// \brief
@@ -125,6 +131,7 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray& obstacle_msg)
 
     measurement.resize(obstacle_size, std::vector<double>(2));
 
+    ROS_INFO_STREAM("measurement as measured"); 
     for(int i = 0; i<obstacle_size; i++)
     {
         double x, y, r, phi;
@@ -136,6 +143,9 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray& obstacle_msg)
 
         measurement[i][0] = r;
         measurement[i][1] = phi;
+        
+        ROS_INFO_STREAM(measurement[i][0]); 
+        ROS_INFO_STREAM(measurement[i][1]); 
     }
 }
 
@@ -147,7 +157,7 @@ void slam_timer_callback(const ros::TimerEvent&)
     for(int i = 0; i<m; i++)
     {   
         turtlelib::Twist u = twist;
-        ROS_INFO_STREAM("Twist"<<u); 
+        // ROS_INFO_STREAM("Twist"<<u); 
         arma::Mat<double> q_predict =  ekf_slam.predict_q(u);
         arma::Mat<double> A = ekf_slam.calc_A(u); 
         ekf_slam.predict();
@@ -156,6 +166,7 @@ void slam_timer_callback(const ros::TimerEvent&)
         m(0) = measurement[i][0];
         m(1) =  measurement[i][1]; 
         arma::Mat<double> q = ekf_slam.update(m);
+        // ROS_INFO_STREAM("robot state" << q); 
         slam_config.phi = q(0);
         slam_config.x = q(1);
         slam_config.y = q(2);
@@ -277,8 +288,8 @@ void initialize()
 
 
     arma::Mat<double> Sigma_0q = arma::zeros(3,3);
-    arma::Mat<double> Sigma_0m = arma::ones(2*m_size,2*m_size);
-    Sigma_0m = Sigma_0m*200; 
+    arma::Mat<double> Sigma_0m = arma::eye(2*m_size,2*m_size);
+    Sigma_0m = Sigma_0m*100000; 
     arma::Mat<double> zeros2n_3 = arma::zeros(2*m_size,3);
     arma::Mat<double> zeros3_2n = arma::zeros(3,2*m_size);
     arma::Mat<double> zeros2n_2n = arma::zeros(2*m_size, 2*m_size);
@@ -288,15 +299,15 @@ void initialize()
     ekf_slam.ekf_size(m_size);
     ekf_slam.initial_state(q_0, Sigma_0); 
     
-    arma::Mat<double> Q = {{0.5, 0, 0},
-                           {0, 0.01, 0}, 
-                           {0, 0, 0.01}}; 
+    arma::Mat<double> Q = {{1.0, 0, 0},
+                           {0, 1.0, 0}, 
+                           {0, 0, 1.0}}; 
     
     arma::Mat<double> Q_bar = arma::join_cols(Q, zeros2n_3); 
     Q_bar = arma::join_rows(Q_bar, arma::join_cols(zeros3_2n,zeros2n_2n)); 
     
     arma::Mat<double> R = {{0.001, 0},
-                           {0, 0.05}}; 
+                           {0, 0.001}}; 
     ekf_slam.setQ(Q_bar); 
     ekf_slam.setR(R); 
 
@@ -343,8 +354,8 @@ int main(int argc, char** argv)
     green_path_pub = nh.advertise<nav_msgs::Path>("/green_path", 10); 
     green_sensor_pub = nh.advertise<visualization_msgs::MarkerArray>("green_sensor", 1, true);
     // Odom message
-    odom.header.frame_id = body_id;
-    odom.child_frame_id = odom_id;
+    odom.header.frame_id = "world";
+    odom.child_frame_id = "blue_base_footprint";
 
     // Transform definition
     transformStamped.header.stamp = ros::Time::now();
@@ -361,6 +372,8 @@ int main(int argc, char** argv)
 
 
     tf2_ros::TransformBroadcaster br;
+    tf2_ros::TransformBroadcaster map_br; 
+    tf2_ros::TransformBroadcaster green_br; 
     
     while(ros::ok())
     {
@@ -384,8 +397,8 @@ int main(int argc, char** argv)
         publish_topics();
         odom_pub.publish(odom);
         br.sendTransform(transformStamped);
-        br.sendTransform(map2odom_trans);
-        br.sendTransform(odom2green_trans); 
+        map_br.sendTransform(map2odom_trans);
+        green_br.sendTransform(odom2green_trans); 
         ros::spinOnce();
         loop_rate.sleep();
         

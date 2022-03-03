@@ -33,15 +33,21 @@ namespace slam
     }
 
     /// \brief Set the Q matrix
-    void ekf::setQ(arma::Mat<double> Q)
+    void ekf::setQ(arma::Mat<double> Q_set)
     {
-        Q = Q;
+        Q = Q_set;
     }
 
     /// \brief Set the R matrix
     void ekf::setR(arma::Mat<double> R)
     {
         R = R;
+        Q.print("Q"); 
+        R.print("R");
+        A.print("A");
+        H.print("H");
+        Sigma_previous.print("Sigma_prev");
+        q_previous.print("q_prev");
     }
 
     /// \brief Set the A matrix
@@ -70,13 +76,13 @@ namespace slam
         else
         {
             update(0) = u.thetadot;  
-            update(1) = (-u.xdot*sin(q_previous(0))/u.thetadot) + (u.xdot*sin((q_previous(0)+u.thetadot))/u.thetadot); 
-            update(2) = (u.xdot*cos(q_previous(0))/u.thetadot) - (u.xdot*cos((q_previous(0)+u.thetadot))/u.thetadot);
+            update(1) = (-u.xdot*sin(q_previous(0))/u.thetadot) + (u.xdot*sin((q_previous(0) + u.thetadot))/u.thetadot); 
+            update(2) = (u.xdot*cos(q_previous(0))/u.thetadot) - (u.xdot*cos((q_previous(0) + u.thetadot))/u.thetadot);
         }
         
         arma::Mat<double> update_zeros = arma::zeros(2*obs_size, 1); 
         arma::Mat<double> updated = arma::join_cols(update, update_zeros); 
-        updated.print(std::cout << "updated"); 
+        // updated.print(std::cout << "updated"); 
         q_predict = q_previous + updated;
 
         return q_predict;
@@ -88,24 +94,25 @@ namespace slam
         arma::Mat<double> A_q;
         if(u.thetadot==0.0)
         {
-            A_q = {{0 ,                           0, 0},
-                 {-u.xdot*sin(q_previous(0)),   0, 0},
-                 {u.xdot*cos(q_previous(0)),    0, 0}};
+            A_q = {{1 ,                           0, 0},
+                 {-u.xdot*sin(q_previous(0)),   1, 0},
+                 {u.xdot*cos(q_previous(0)),    0, 1}};
         }
         else{
-            A_q = {{0 ,                                       0, 0},
-                 {(-u.xdot*cos(q_previous(0))/u.thetadot) + (u.xdot*cos((q_previous(0)+u.thetadot))/u.thetadot),    0, 0},
-                 {(-u.xdot*sin(q_previous(0))/u.thetadot) + (u.xdot*sin((q_previous(0)+u.thetadot))/u.thetadot),                0, 0}};
+            A_q = {{1 ,                                       0, 0},
+                 {(-u.xdot*cos(q_previous(0))/u.thetadot) + (u.xdot*cos((q_previous(0)+u.thetadot))/u.thetadot),    1, 0},
+                 {(-u.xdot*sin(q_previous(0))/u.thetadot) + (u.xdot*sin((q_previous(0)+u.thetadot))/u.thetadot),    0, 1}};
         }
 
         arma::Mat<double> zeros2n_3 = arma::zeros(2*obs_size,3);
         arma::Mat<double> zeros3_2n = arma::zeros(3,2*obs_size);
-        arma::Mat<double> zeros2n_2n = arma::zeros(2*obs_size, 2*obs_size); 
+        arma::Mat<double> zeros2n_2n = arma::eye(2*obs_size, 2*obs_size); 
         A_q = arma::join_rows(A_q, zeros3_2n); 
         arma::Mat<double> zero2n_2n3 = arma::join_rows(zeros2n_3, zeros2n_2n);
         A = arma::join_cols(A_q, zero2n_2n3); 
 
-        A += I;
+        // A += I;
+        // A.print(std::cout << "A"); 
         
         // ekf::setA(A);
         return A;
@@ -154,6 +161,8 @@ namespace slam
     {
         q_previous = x_0;
         Sigma_previous = Sigma_0;
+        // Sigma_previous.print(std::cout<<"Sigma prev"<<std::endl); 
+        
     }
 
     void ekf::predict()
@@ -163,14 +172,16 @@ namespace slam
 
     arma::Mat<double> ekf::update(arma::Mat<double> z_measured)
     {
+        z_measured.print(std::cout << "z_measured" <<std::endl); 
         // H.print(std::cout << "H"); 
-        // Sigma_predict.print(std::cout<<"Sigma Pred"); 
-        K = (Sigma_predict*(H.t()))*inv((H*Sigma_predict*(H.t())) + R);
-        K.print(std::cout << "K"<<std::endl); 
+        // Sigma_predict.print(std::cout<<"Sigma Pred"<<std::endl); 
+        K = (Sigma_predict*(H.t()))*(((H*Sigma_predict*(H.t())) + R).i());
+        // K.print(std::cout << "K"<<std::endl); 
         arma::Mat<double> z_diff = z_measured  - z_predict; 
         z_diff(1) = turtlelib::normalize_angle(z_diff(1));
 
         q_update = q_predict + (K*(z_diff));
+
         Sigma_update = (I - K*H)*Sigma_predict;
 
         q_update(0) = turtlelib::normalize_angle(q_update(0)); 

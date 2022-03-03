@@ -32,8 +32,8 @@ bool control_callback(nuturtle_control::control::Request& control, nuturtle_cont
     velocity  = control.velocity;
     radius = control.radius;
 
-    vel_cmd.linear.x = velocity;
-    vel_cmd.angular.z = velocity/radius;
+    vel_cmd.linear.x = velocity*radius;
+    vel_cmd.angular.z = velocity;
 
     return true;
 }

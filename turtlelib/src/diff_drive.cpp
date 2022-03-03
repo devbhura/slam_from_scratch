@@ -122,14 +122,20 @@ namespace turtlelib
    return q_new;
 }
 
-Twist DiffDrive::getTwist(WheelPhi newphi)
+Twist DiffDrive::getTwist(WheelPhi speed)
 {
-  Vector2D u;
-  u.x = - phi.left_phi + newphi.left_phi;
-  u.y =  - phi.right_phi + newphi.right_phi;
   Twist V;
-  V.thetadot = -r*u.x/(2.0*d) + r*u.y/(2.0*d);
-  V.xdot = r*u.x/2.0 + r*u.y/2.0;
+  
+  // Vector2D u;
+  // u.x = - phi.left_phi + newphi.left_phi;
+  // u.y =  - phi.right_phi + newphi.right_phi;
+  
+  // V.thetadot = -r*u.x/(2.0*d) + r*u.y/(2.0*d);
+  // V.xdot = r*u.x/2.0 + r*u.y/2.0;
+  // V.ydot = 0;
+
+  V.thetadot = (r/(2.0*d)*(- speed.left_phi + speed.right_phi));
+  V.xdot = r*(speed.left_phi + speed.right_phi)/2.0;
   V.ydot = 0;
 
   return V; 

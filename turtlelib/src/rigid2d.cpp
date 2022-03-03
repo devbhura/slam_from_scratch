@@ -8,11 +8,17 @@ namespace turtlelib
 // -------Normalize theta ---------
 double normalize_angle(double angle)
 {
-    double x = fmod(angle-PI,2*PI);
-    if (x > 0){
-        x -= 2*PI;
+    // double x = fmod(angle-PI,2*PI);
+    // if (x > 0){
+    //     x -= 2*PI;
+    // }
+    angle = remainder(angle,(2.0*PI)); 
+    if(angle == -PI)
+    {
+        angle += 2.0*PI; 
     }
-    return x + PI;
+    // return x + PI;
+    return angle; 
 }
 
 // ----- Vector2D struct ----------

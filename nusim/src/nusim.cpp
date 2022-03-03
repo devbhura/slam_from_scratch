@@ -222,8 +222,8 @@ void timer_callback(const ros::TimerEvent&)
         double r = sqrt(pow(body_vec.x,2) + pow(body_vec.y,2));
         double ang = atan2(body_vec.y,body_vec.x);
 
-        r += sennoi;
-        ang += sennoi;
+        // r += sennoi;
+        // ang += sennoi;
 
         fake_sensor.markers[i].pose.position.x = r*cos(ang);
         fake_sensor.markers[i].pose.position.y = r*sin(ang);
@@ -390,20 +390,22 @@ void sub_wheel_callback(const nuturtlebot_msgs::WheelCommands& input)
     u.x = input.left_velocity;
     u.y = input.right_velocity;
 
-    if(u.x!=0){ u.x += wheel_noise;}
-    if(u.y!=0){ u.y += wheel_noise;}
+    // if(u.x!=0){ u.x += wheel_noise;}
+    // if(u.y!=0){ u.y += wheel_noise;}
 
     u.x = u.x*motor_cmd_to_radsec;
     u.y = u.y*motor_cmd_to_radsec;
 
     // Multiply by slip 
-    u.x = eta*u.x;
-    u.y = eta*u.y;
+    // u.x = eta*u.x;
+    // u.y = eta*u.y;
 
     old_phi.left_phi += u.x/r;
     old_phi.right_phi += u.y/r;
 
 
+    turtlelib::Twist twi = diff_drive.getTwist(old_phi); 
+    // ROS_INFO_STREAM("Twist from nusim" << twi); 
 
     q = diff_drive.ForwardKin(old_phi);
 
