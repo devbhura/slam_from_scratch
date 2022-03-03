@@ -30,9 +30,10 @@
 #include "nuslam/ekf.hpp"
 #include <iostream>
 #include <ros/console.h>
+#include "nav_msgs/Path.h"
 
 static ros::Subscriber joint_state_sub, fake_sensor_sub;
-static ros::Publisher odom_pub;
+static ros::Publisher odom_pub, green_path_pub, green_sensor_pub;
 static nav_msgs::Odometry odom;
 static turtlelib::DiffDrive diff_drive;
 static double radius, dist;
@@ -43,6 +44,9 @@ static turtlelib::Twist twist;
 static std::vector<std::vector<double>> measurement;
 static slam::ekf ekf_slam;
 static bool slam_flag = false; 
+static nav_msgs::Path green_path; 
+static visualization_msgs::MarkerArray green_fake_sensor;
+static double obs_radius;  
 
 void initialize();
 
@@ -106,6 +110,8 @@ void publish_topics()
     transformStamped.transform.rotation.z = quat.z();
     transformStamped.transform.rotation.w = quat.w();
 
+    // Path
+    green_path_pub.publish(green_path); 
 }
 
 /// \brief
@@ -136,9 +142,12 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray& obstacle_msg)
 void slam_timer_callback(const ros::TimerEvent&)
 {
     int m = measurement.size();
+    green_fake_sensor.markers.resize(m);
+
     for(int i = 0; i<m; i++)
     {   
         turtlelib::Twist u = twist;
+        ROS_INFO_STREAM("Twist"<<u); 
         arma::Mat<double> q_predict =  ekf_slam.predict_q(u);
         arma::Mat<double> A = ekf_slam.calc_A(u); 
         ekf_slam.predict();
@@ -150,6 +159,59 @@ void slam_timer_callback(const ros::TimerEvent&)
         slam_config.phi = q(0);
         slam_config.x = q(1);
         slam_config.y = q(2);
+
+        // Publish Green Markers
+        green_fake_sensor.markers[i].header.frame_id = "map";
+        green_fake_sensor.markers[i].header.stamp = ros::Time::now();
+        green_fake_sensor.markers[i].id = i;
+
+        green_fake_sensor.markers[i].type = visualization_msgs::Marker::CYLINDER;
+        green_fake_sensor.markers[i].action = visualization_msgs::Marker::ADD;
+
+        green_fake_sensor.markers[i].pose.position.x = q(3+2*i);
+        green_fake_sensor.markers[i].pose.position.y = q(4+2*i);
+        green_fake_sensor.markers[i].pose.position.z = 0.0;
+
+        tf2::Quaternion q_obs;
+        q_obs.setRPY(0, 0, 0);
+
+        green_fake_sensor.markers[i].pose.orientation.x = q_obs.x();
+        green_fake_sensor.markers[i].pose.orientation.y = q_obs.y();
+        green_fake_sensor.markers[i].pose.orientation.z = q_obs.z();
+        green_fake_sensor.markers[i].pose.orientation.w = q_obs.w();
+
+        green_fake_sensor.markers[i].scale.x = 2*obs_radius;
+        green_fake_sensor.markers[i].scale.y = 2*obs_radius;
+        green_fake_sensor.markers[i].scale.z = 0.25;
+
+
+        green_fake_sensor.markers[i].color.r = 0;
+        green_fake_sensor.markers[i].color.g = 1;
+        green_fake_sensor.markers[i].color.b = 0;
+        green_fake_sensor.markers[i].color.a = 1;
+
+        green_sensor_pub.publish(green_fake_sensor); 
+
+        // 
+
+        geometry_msgs::PoseStamped pose;
+
+        pose.header.stamp = ros::Time::now();
+        pose.header.frame_id = "map";
+        pose.pose.position.x = slam_config.x;
+        pose.pose.position.y = slam_config.y; 
+        pose.pose.position.z = 0.0;
+
+        tf2::Quaternion quat;
+        quat.setRPY(0, 0, slam_config.phi);
+        pose.pose.orientation.x = quat.x();
+        pose.pose.orientation.y = quat.y();
+        pose.pose.orientation.z = quat.z();
+        pose.pose.orientation.w = quat.w();
+        
+        green_path.header.stamp = ros::Time::now();
+        green_path.header.frame_id = "map";
+        green_path.poses.push_back(pose);
     }
 }
 
@@ -226,15 +288,15 @@ void initialize()
     ekf_slam.ekf_size(m_size);
     ekf_slam.initial_state(q_0, Sigma_0); 
     
-    arma::Mat<double> Q = {{100, 0, 0},
-                           {0, 100, 0}, 
-                           {0, 0, 100}}; 
+    arma::Mat<double> Q = {{0.5, 0, 0},
+                           {0, 0.01, 0}, 
+                           {0, 0, 0.01}}; 
     
     arma::Mat<double> Q_bar = arma::join_cols(Q, zeros2n_3); 
     Q_bar = arma::join_rows(Q_bar, arma::join_cols(zeros3_2n,zeros2n_2n)); 
     
-    arma::Mat<double> R = {{10, 0},
-                           {0, 0.5}}; 
+    arma::Mat<double> R = {{0.001, 0},
+                           {0, 0.05}}; 
     ekf_slam.setQ(Q_bar); 
     ekf_slam.setR(R); 
 
@@ -261,6 +323,8 @@ int main(int argc, char** argv)
     nh.param("x0",x0,0.0);
     nh.param("y0",yinit,0.0);
     nh.param("theta0",theta0,0.0);
+    nh.param("obs_radius",obs_radius,0.025);
+
 
     c.x = x0;
     c.y = yinit;
@@ -276,7 +340,8 @@ int main(int argc, char** argv)
 
     // Assign the publisher odom
     odom_pub = nh.advertise<nav_msgs::Odometry>("/odom", 10);
-
+    green_path_pub = nh.advertise<nav_msgs::Path>("/green_path", 10); 
+    green_sensor_pub = nh.advertise<visualization_msgs::MarkerArray>("green_sensor", 1, true);
     // Odom message
     odom.header.frame_id = body_id;
     odom.child_frame_id = odom_id;

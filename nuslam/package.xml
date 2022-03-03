@@ -67,6 +67,12 @@
   <build_export_depend> tf2_ros </build_export_depend>
   <build_export_depend> sensor_msgs </build_export_depend>
 
+  <exec_depend> tf2_ros </exec_depend> 
+  <exec_depend> turtlebot3_teleop</exec_depend> 
+  <exec_depend> nusim </exec_depend> 
+  <exec_depend> rviz </exec_depend> 
+  <exec_depend> nuturtle_control </exec_depend> 
+  <exec_depend> nuturtle_description </exec_depend> 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->

@@ -76,7 +76,7 @@ namespace slam
         
         arma::Mat<double> update_zeros = arma::zeros(2*obs_size, 1); 
         arma::Mat<double> updated = arma::join_cols(update, update_zeros); 
-        // updated.print(std::cout << "updated"); 
+        updated.print(std::cout << "updated"); 
         q_predict = q_previous + updated;
 
         return q_predict;
@@ -114,15 +114,15 @@ namespace slam
     /// \brief Calculate the H matrix
     arma::Mat<double> ekf::calc_H(int j)
     {
-        double mx = q_predict[3 + 2*j]; 
-        double my = q_predict[4 + 2*j]; 
-        double theta = q_predict[0]; 
-        double x = q_predict[1];
-        double y = q_predict[2];
+        double mx = q_predict(3 + 2*j); 
+        double my = q_predict(4 + 2*j); 
+        double theta = q_predict(0); 
+        double x = q_predict(1);
+        double y = q_predict(2);
         
         z_predict(0) = sqrt(pow((mx - x),2)+ pow((my-y),2));
         z_predict(1) = atan2((my-y),(mx-x)) - theta;
-
+        z_predict(1) = turtlelib::normalize_angle(z_predict(1)); 
         double delx = mx - x; 
         double dely = my - y;
 
@@ -166,10 +166,14 @@ namespace slam
         // H.print(std::cout << "H"); 
         // Sigma_predict.print(std::cout<<"Sigma Pred"); 
         K = (Sigma_predict*(H.t()))*inv((H*Sigma_predict*(H.t())) + R);
+        K.print(std::cout << "K"<<std::endl); 
         arma::Mat<double> z_diff = z_measured  - z_predict; 
-        z_diff(1) = turtlelib::normalize_angle(z_diff(1)); 
+        z_diff(1) = turtlelib::normalize_angle(z_diff(1));
+
         q_update = q_predict + (K*(z_diff));
         Sigma_update = (I - K*H)*Sigma_predict;
+
+        q_update(0) = turtlelib::normalize_angle(q_update(0)); 
 
         q_previous = q_update; 
         Sigma_previous = Sigma_update;
