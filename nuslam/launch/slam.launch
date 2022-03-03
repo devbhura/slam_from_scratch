@@ -14,13 +14,13 @@
 
     <group if="$(eval arg('robot') == 'nusim')">
 
-        <node name="slam" pkg="nuslam" type="slam" output="screen"/>
+        
         
         <include file="$(find nusim)/launch/nusim.launch">
             <arg name="use_rviz" value="false"/>
         </include>
 
-        <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface"/>
+        <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface" output="screen"/>
 
 
         <include file="$(find nuturtle_description)/launch/load.launch">
@@ -38,6 +38,8 @@
             <arg name="use_rviz" value="false" />
 
         </include>
+
+        <node name="slam" pkg="nuslam" type="slam" output="screen"/>
 
         <node if="$(eval arg('cmd_src') == 'circle')" name="circle" pkg="nuturtle_control" type="circle"/>
 

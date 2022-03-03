@@ -57,17 +57,18 @@ void initialize();
 /// Output: Empty
 void joint_state_callback(const sensor_msgs::JointState& js_msg)
 {
+    ROS_INFO_ONCE("js_msg_vel_x %d", int((js_msg.velocity).size()));
     
     phi.left_phi = js_msg.position.at(0);
     phi.right_phi = js_msg.position.at(1);
-    double lef_vel = js_msg.velocity.at(0); 
-    double right_vel = js_msg.velocity.at(1); 
+    // double lef_vel = js_msg.velocity.at(0); 
+    // double right_vel = js_msg.velocity.at(1); 
     // ROS_WARN("%f %f",lef_vel,right_vel);
-    turtlelib::WheelPhi wheel_speed{lef_vel, right_vel}; 
+    // turtlelib::WheelPhi wheel_speed{lef_vel, right_vel}; 
     // ROS_WARN("N");
 
-    twist = diff_drive.getTwist(wheel_speed); 
-    // twist = diff_drive.getTwist(phi); 
+    // twist = diff_drive.getTwist(wheel_speed); 
+    twist = diff_drive.getTwist(phi); 
     // ROS_INFO_STREAM("Twist from diff_drive" << twist); 
     qhat = diff_drive.ForwardKin(phi);
     
@@ -117,7 +118,7 @@ void publish_topics()
     transformStamped.transform.rotation.w = quat.w();
 
     // Path
-    // green_path_pub.publish(green_path); 
+   
 }
 
 /// \brief
@@ -131,7 +132,7 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray& obstacle_msg)
 
     measurement.resize(obstacle_size, std::vector<double>(2));
 
-    ROS_INFO_STREAM("measurement as measured"); 
+    // ROS_INFO_STREAM("measurement as measured"); 
     for(int i = 0; i<obstacle_size; i++)
     {
         double x, y, r, phi;
@@ -144,8 +145,8 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray& obstacle_msg)
         measurement[i][0] = r;
         measurement[i][1] = phi;
         
-        ROS_INFO_STREAM(measurement[i][0]); 
-        ROS_INFO_STREAM(measurement[i][1]); 
+        // ROS_INFO_STREAM(measurement[i][0]); 
+        // ROS_INFO_STREAM(measurement[i][1]); 
     }
 }
 
@@ -213,6 +214,11 @@ void slam_timer_callback(const ros::TimerEvent&)
         pose.pose.position.y = slam_config.y; 
         pose.pose.position.z = 0.0;
 
+        // ROS_INFO_STREAM("slam_config.x"<< slam_config.x); 
+        // ROS_INFO_STREAM("slam_config.y"<< slam_config.y);
+        // ROS_INFO_STREAM("slam_config.phi"<< slam_config.phi);
+
+
         tf2::Quaternion quat;
         quat.setRPY(0, 0, slam_config.phi);
         pose.pose.orientation.x = quat.x();
@@ -224,6 +230,8 @@ void slam_timer_callback(const ros::TimerEvent&)
         green_path.header.frame_id = "map";
         green_path.poses.push_back(pose);
     }
+
+    green_path_pub.publish(green_path); 
 }
 
 void publish_slam()
@@ -260,6 +268,7 @@ void publish_slam()
     map2odom_trans.transform.rotation.z = quat.z();
     map2odom_trans.transform.rotation.w = quat.w();
 
+    
 }
 
 void initialize()
@@ -375,6 +384,7 @@ int main(int argc, char** argv)
     tf2_ros::TransformBroadcaster map_br; 
     tf2_ros::TransformBroadcaster green_br; 
     
+    loop_rate.sleep();
     while(ros::ok())
     {
         if(measurement.size()>1)
@@ -392,13 +402,14 @@ int main(int argc, char** argv)
         if(slam_flag)
         {
             publish_slam();
+            map_br.sendTransform(map2odom_trans);
+            green_br.sendTransform(odom2green_trans); 
         }
         
         publish_topics();
         odom_pub.publish(odom);
         br.sendTransform(transformStamped);
-        map_br.sendTransform(map2odom_trans);
-        green_br.sendTransform(odom2green_trans); 
+        
         ros::spinOnce();
         loop_rate.sleep();
         

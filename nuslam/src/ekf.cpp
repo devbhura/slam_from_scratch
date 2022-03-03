@@ -42,12 +42,7 @@ namespace slam
     void ekf::setR(arma::Mat<double> R)
     {
         R = R;
-        Q.print("Q"); 
-        R.print("R");
-        A.print("A");
-        H.print("H");
-        Sigma_previous.print("Sigma_prev");
-        q_previous.print("q_prev");
+        
     }
 
     /// \brief Set the A matrix
@@ -153,6 +148,13 @@ namespace slam
 
         H = arma::join_rows(H_q, H_m); 
 
+        // Q.print("Q"); 
+        // R.print("R");
+        // A.print("A");
+        // H.print("H");
+        // Sigma_previous.print("Sigma_prev");
+        // q_previous.print("q_prev");
+
         return H; 
     }
 
@@ -172,7 +174,7 @@ namespace slam
 
     arma::Mat<double> ekf::update(arma::Mat<double> z_measured)
     {
-        z_measured.print(std::cout << "z_measured" <<std::endl); 
+        // z_measured.print(std::cout << "z_measured" <<std::endl); 
         // H.print(std::cout << "H"); 
         // Sigma_predict.print(std::cout<<"Sigma Pred"<<std::endl); 
         K = (Sigma_predict*(H.t()))*(((H*Sigma_predict*(H.t())) + R).i());

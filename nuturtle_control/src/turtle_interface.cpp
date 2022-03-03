@@ -74,6 +74,8 @@ void vel_sub_callback(const geometry_msgs::Twist& msg)
         wheel_cmd.left_velocity = -256;
     }
 
+    wheel_cmd_pub.publish(wheel_cmd);
+
     
 }
 
@@ -86,7 +88,12 @@ void sensor_data_callback(const nuturtlebot_msgs::SensorData& sensor_data)
 
     js_msg.header.stamp = ros::Time::now();
     js_msg.position = {sensor_data.left_encoder*encoder_ticks_to_rad, sensor_data.right_encoder*encoder_ticks_to_rad};
+    ROS_INFO_ONCE("js_msg_vel_x %f", u.x); 
+    ROS_INFO_ONCE("js_msg_vel_y %f", u.y); 
+
     js_msg.velocity = {u.x, u.y};
+
+    joint_state_pub.publish(js_msg);
     
     saved_left_vel_tick = sensor_data.left_encoder;
     saved_right_vel_tick = sensor_data.right_encoder;
@@ -122,8 +129,8 @@ int main(int argc, char** argv)
     while(ros::ok())
     {
         
-        wheel_cmd_pub.publish(wheel_cmd);
-        joint_state_pub.publish(js_msg);
+        
+        
 
         ros::spinOnce();
 
