@@ -73,6 +73,7 @@
   <exec_depend> rviz </exec_depend> 
   <exec_depend> nuturtle_control </exec_depend> 
   <exec_depend> nuturtle_description </exec_depend> 
+  <exec_depend> hls_lfcd_lds_driver </exec_depend> 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->

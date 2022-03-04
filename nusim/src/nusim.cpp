@@ -50,6 +50,9 @@
 #include "turtlelib/rigid2d.hpp"
 #include <random>
 #include "ros/console.h"
+#include "nav_msgs/Path.h"
+#include "geometry_msgs/Pose.h"
+#include "geometry_msgs/PoseStamped.h"
 
 static double timestep;
 static double x, x0;
@@ -62,7 +65,7 @@ static ros::Publisher obstacle_marker, wall_marker, snsr_data, fake_sensor_pub, 
 static turtlelib::DiffDrive diff_drive;
 static double motor_cmd_to_radsec;
 static double encoder_ticks_to_rad;
-static turtlelib::WheelPhi old_phi;
+static turtlelib::WheelPhi old_phi, noisy_phi;
 static int r;
 static double dist, radius;
 static turtlelib::Config q, q_old;
@@ -222,8 +225,8 @@ void timer_callback(const ros::TimerEvent&)
         double r = sqrt(pow(body_vec.x,2) + pow(body_vec.y,2));
         double ang = atan2(body_vec.y,body_vec.x);
 
-        // r += sennoi;
-        // ang += sennoi;
+        r += sennoi;
+        ang += sennoi;
 
         fake_sensor.markers[i].pose.position.x = r*cos(ang);
         fake_sensor.markers[i].pose.position.y = r*sin(ang);
@@ -386,23 +389,26 @@ void sub_wheel_callback(const nuturtlebot_msgs::WheelCommands& input)
 
     double wheel_noise = noise(get_random());
     double eta = slip(get_random());
-
+    ROS_INFO_ONCE("Wheel noise %f", wheel_noise);
     u.x = input.left_velocity;
     u.y = input.right_velocity;
-
-    // if(u.x!=0){ u.x += wheel_noise;}
-    // if(u.y!=0){ u.y += wheel_noise;}
 
     u.x = u.x*motor_cmd_to_radsec;
     u.y = u.y*motor_cmd_to_radsec;
 
+    if(u.x!=0){ u.x += wheel_noise;}
+    if(u.y!=0){ u.y += wheel_noise;}
+
     // Multiply by slip 
-    // u.x = eta*u.x;
-    // u.y = eta*u.y;
+    ROS_INFO_ONCE("SLIP %f", eta);
+    u.x = u.x;
+    u.y = u.y;
 
-    old_phi.left_phi += u.x/r;
-    old_phi.right_phi += u.y/r;
+    old_phi.left_phi += (u.x/r);
+    old_phi.right_phi += (u.y/r);
 
+    noisy_phi.left_phi += (u.x/r) + (slip(get_random())*u.x/r);
+    noisy_phi.right_phi += (u.y/r) + (slip(get_random())*u.y/r); 
 
     turtlelib::Twist twi = diff_drive.getTwist(old_phi); 
     // ROS_INFO_STREAM("Twist from nusim" << twi); 
@@ -421,10 +427,12 @@ void sub_wheel_callback(const nuturtlebot_msgs::WheelCommands& input)
 
     diff_drive = turtlelib::DiffDrive(dist, radius, old_phi, q);
 
-    sensor.left_encoder = int(old_phi.left_phi/encoder_ticks_to_rad);
-    sensor.right_encoder = int(old_phi.right_phi/encoder_ticks_to_rad);
+    sensor.left_encoder = int(((u.x/r) + noisy_phi.left_phi)/encoder_ticks_to_rad);
+    sensor.right_encoder = int(((u.y/r) + noisy_phi.right_phi)/encoder_ticks_to_rad);
 
     
+    // sensor.left_encoder = fmod(sensor.left_encoder,4096);
+    // sensor.right_encoder = fmod(sensor.right_encoder,4096);
 }
 
 bool checkCollision(turtlelib::Config q)
@@ -589,6 +597,7 @@ int main(int argc, char** argv)
     ros::Publisher pub = nh.advertise<std_msgs::UInt64>("timestep", 100);
     ros::Timer timer_sensor = nh.createTimer(ros::Duration(0.2), timer_callback);
     ros::Timer timer_lidar = nh.createTimer(ros::Duration(0.2), lidar_timer_callback);
+    ros::Publisher red_path_pub = nh.advertise<nav_msgs::Path>("/red_path", 10, true);
     // ros::Publisher joint_msg_pub = red.advertise<sensor_msgs::JointState>("joint_states", 1);
     obstacle_marker = obstacle.advertise<visualization_msgs::MarkerArray>("obs", 1, true);
     wall_marker = obstacle.advertise<visualization_msgs::MarkerArray>("wall", 1, true);
@@ -646,6 +655,8 @@ int main(int argc, char** argv)
     old_phi.left_phi = 0.0;
     old_phi.right_phi = 0.0;
     
+    noisy_phi.left_phi = 0.0;
+    noisy_phi.right_phi = 0.0; 
 
     // Transform definition
     tf2_ros::TransformBroadcaster br;
@@ -670,7 +681,8 @@ int main(int argc, char** argv)
     // Walls marker position arrays
     wall_x_arr = {x_length/2, -x_length/2, -x_length/2, x_length/2, x_length/2};
     wall_y_arr = {y_length/2, y_length/2, -y_length/2, -y_length/2, y_length/2};
-    
+    geometry_msgs::PoseStamped red_pose;
+    nav_msgs::Path red_path; 
     while(ros::ok())
     {
         
@@ -691,6 +703,24 @@ int main(int argc, char** argv)
         transformStamped.transform.rotation.z = q.z();
         transformStamped.transform.rotation.w = q.w();
         br.sendTransform(transformStamped);
+
+        
+
+        red_pose.header.stamp = ros::Time::now();
+        red_pose.header.frame_id = "world";
+        red_pose.pose.position.x = con.x;
+        red_pose.pose.position.y = con.y; 
+        red_pose.pose.position.z = 0.0;
+        // pose.pose.orientation.x = q.x();
+        // pose.pose.orientation.y = q.y();
+        // pose.pose.orientation.z = q.z();
+        // pose.pose.orientation.w = q.w();
+
+        
+        red_path.header.stamp = ros::Time::now();
+        red_path.header.frame_id = "world";
+        red_path.poses.push_back(red_pose);
+        red_path_pub.publish(red_path); 
         
         obstacles();
 

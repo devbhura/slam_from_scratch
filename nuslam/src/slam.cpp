@@ -44,7 +44,7 @@ static turtlelib::Twist twist;
 static std::vector<std::vector<double>> measurement;
 static slam::ekf ekf_slam;
 static bool slam_flag = false; 
-static nav_msgs::Path green_path; 
+static nav_msgs::Path green_path, blue_path; 
 static visualization_msgs::MarkerArray green_fake_sensor;
 static double obs_radius;  
 
@@ -93,16 +93,32 @@ void publish_topics()
     odom.pose.pose.position.y = q_odom.y;
     odom.pose.pose.position.z = 0.0;
 
+    geometry_msgs::PoseStamped pose;
+
+    pose.header.stamp = ros::Time::now();
+    pose.header.frame_id = "map";
+    pose.pose.position.x = q_odom.x;
+    pose.pose.position.y = q_odom.y; 
+    pose.pose.position.z = 0.0;
+
     tf2::Quaternion quat;
     quat.setRPY(0, 0, q_odom.phi);
     odom.pose.pose.orientation.x = quat.x();
     odom.pose.pose.orientation.y = quat.y();
     odom.pose.pose.orientation.z = quat.z();
     odom.pose.pose.orientation.w = quat.w();
+
+    pose.pose.orientation.x = quat.x();
+    pose.pose.orientation.y = quat.y();
+    pose.pose.orientation.z = quat.z();
+    pose.pose.orientation.w = quat.w();
     
     odom.twist.twist.linear.x = twist.xdot;
     odom.twist.twist.linear.y = twist.ydot;
     odom.twist.twist.angular.z = twist.thetadot;
+    blue_path.header.stamp = ros::Time::now();
+    blue_path.header.frame_id = "world";
+    blue_path.poses.push_back(pose);
 
     // TF 
     
@@ -308,9 +324,9 @@ void initialize()
     ekf_slam.ekf_size(m_size);
     ekf_slam.initial_state(q_0, Sigma_0); 
     
-    arma::Mat<double> Q = {{1.0, 0, 0},
-                           {0, 1.0, 0}, 
-                           {0, 0, 1.0}}; 
+    arma::Mat<double> Q = {{0.1, 0, 0},
+                           {0, 0.1, 0}, 
+                           {0, 0, 0.1}}; 
     
     arma::Mat<double> Q_bar = arma::join_cols(Q, zeros2n_3); 
     Q_bar = arma::join_rows(Q_bar, arma::join_cols(zeros3_2n,zeros2n_2n)); 
@@ -361,6 +377,7 @@ int main(int argc, char** argv)
     // Assign the publisher odom
     odom_pub = nh.advertise<nav_msgs::Odometry>("/odom", 10);
     green_path_pub = nh.advertise<nav_msgs::Path>("/green_path", 10); 
+    ros::Publisher blue_path_pub = nh.advertise<nav_msgs::Path>("/blue_path", 10); 
     green_sensor_pub = nh.advertise<visualization_msgs::MarkerArray>("green_sensor", 1, true);
     // Odom message
     odom.header.frame_id = "world";
@@ -404,6 +421,7 @@ int main(int argc, char** argv)
             publish_slam();
             map_br.sendTransform(map2odom_trans);
             green_br.sendTransform(odom2green_trans); 
+            blue_path_pub.publish(blue_path); 
         }
         
         publish_topics();
