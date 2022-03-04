@@ -81,7 +81,8 @@ static bool lidar_flag = false;
 static sensor_msgs::LaserScan scan;
 static double scan_angle_max, scan_angle_min, samples, scan_range_min, scan_range_max;
 
-bool checkCollision(turtlelib::Config q);
+turtlelib::Config checkCollision(turtlelib::Config q); 
+
 int sgn(double v);
 std::mt19937 & get_random()
 {
@@ -415,15 +416,7 @@ void sub_wheel_callback(const nuturtlebot_msgs::WheelCommands& input)
 
     q = diff_drive.ForwardKin(old_phi);
 
-    bool state = checkCollision(q);
-    if(state)
-    {
-       q = q_old;
-    }
-    else
-    {
-        q_old = q;
-    }
+    q = checkCollision(q);
 
     diff_drive = turtlelib::DiffDrive(dist, radius, old_phi, q);
 
@@ -435,18 +428,39 @@ void sub_wheel_callback(const nuturtlebot_msgs::WheelCommands& input)
     // sensor.right_encoder = fmod(sensor.right_encoder,4096);
 }
 
-bool checkCollision(turtlelib::Config q)
+turtlelib::Config checkCollision(turtlelib::Config q_check)
 {
     double coll_dist;
     bool state = false;
+    double x1, y1, x2, y2, col_ang, K; 
+    K = collision_radius+obs_radius; 
     for (int i = 0; i<obstacles_x_arr.size(); i++)
     {
-        coll_dist = sqrt(pow(q.x - obstacles_x_arr[i],2) + pow(q.y - obstacles_y_arr[i],2));
-        if(turtlelib::almost_equal(coll_dist,(collision_radius+obs_radius), 0.01))
-        {state = true;}
+        coll_dist = sqrt(pow(q_check.x - obstacles_x_arr[i],2) + pow(q_check.y - obstacles_y_arr[i],2));
+        if(coll_dist<K)
+        {
+            state = true;
+            x1 = obstacles_x_arr.at(i); y1 = obstacles_y_arr.at(i); 
+        }
     }
 
-    return state;
+    if(state)
+    {
+        x2 = q_check.x; 
+        y2 = q_check.y; 
+        col_ang = atan2((y2-y1),(x2-x1)); 
+        q_check.x = x1 + K*cos(col_ang); 
+        q_check.y = y1 + K*sin(col_ang); 
+        // q_check = q_old;
+        q_old = q_check;
+    }
+    else
+    {
+        q_old = q_check;
+    }
+
+
+    return q_check;
 }
 
 void lidar_timer_callback(const ros::TimerEvent&)
