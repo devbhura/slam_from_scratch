@@ -341,7 +341,7 @@ void initialize()
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "odometry");
+    ros::init(argc, argv, "nuslam");
     ros::NodeHandle nh;
     ros::Rate loop_rate(500);
     ros::NodeHandle nusim("~nusim");
