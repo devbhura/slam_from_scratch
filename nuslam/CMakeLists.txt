@@ -165,6 +165,15 @@ target_link_libraries(slam
   turtlelib
   nuslam
 )
+
+add_executable(landmarks src/landmarks.cpp)
+add_dependencies(landmarks ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(landmarks
+  ${catkin_LIBRARIES}
+  ${ARMADILLO_LIBRARIES}
+  turtlelib
+  nuslam
+)
 # target_include_directories(${PROJECT_NAME} PUBLIC include)
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17) # enable C++ 17
