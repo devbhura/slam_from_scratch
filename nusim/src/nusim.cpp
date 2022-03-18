@@ -93,8 +93,8 @@ std::mt19937 & get_random()
 
 int sgn(double v)
 {
-    if (v < 0.0) return -1;
-    if (v > 0.0) return 1;
+    if (v < 0.0){ return -1;}
+    if (v > 0.0){ return 1;}
     return 0;
 }
 
@@ -509,25 +509,29 @@ void lidar_timer_callback(const ros::TimerEvent&)
             double delt = sqrt(pow(obs_radius,2)*pow(dr,2) - pow(D, 2));
             // ROS_INFO_STREAM("delt: %f" << delt );
             
-            if(delt >= 0.0)
+            if(delt > 0.0 or turtlelib::almost_equal(delt,0.0))
             {
                 double x, y, dx, dy;
                 dy = v2_obs.y - v1_obs.y;
                 dx = v2_obs.x - v1_obs.x;
                 x = ((D*(dy)) - (sgn(dy)*dx*delt))/pow(dr,2);
                 y = ((-D*(dx)) - (abs(dy)*delt))/pow(dr,2);
+
                 turtlelib::Vector2D inter{x,y}, inter_r;
                 inter_r = Tro(inter);
                 double inter_dist = sqrt(pow(inter_r.x,2) + pow(inter_r.y,2));
-                if(sqrt(pow((inter_r.x-v2_obs.x),2) + pow((inter_r.y-v2_obs.y),2)) <inter_dist){
+
+
+                if(sqrt(pow((inter_r.x-v1.x),2) + pow((inter_r.y-v1.y),2)) <inter_dist){
                     range.push_back((inter_dist));
                 }
+
                 x = ((D*(dy)) + (sgn(dy)*dx*delt))/pow(dr,2);
                 y = ((-D*(dx)) + (abs(dy)*delt))/pow(dr,2);
                 turtlelib::Vector2D inter_n{x,y};
                 inter_r = Tro(inter_n);
                 inter_dist = sqrt(pow(inter_r.x,2) + pow(inter_r.y,2));
-                if(sqrt(pow((inter_r.x-v2_obs.x),2) + pow((inter_r.y-v2_obs.y),2)) <inter_dist){
+                if(sqrt(pow((inter_r.x-v1.x),2) + pow((inter_r.y-v1.y),2)) <inter_dist){
                     range.push_back((inter_dist));
                 }
             }
