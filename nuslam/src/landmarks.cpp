@@ -22,12 +22,63 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/Marker.h>
 #include <ros/console.h>
+#include "tf2/LinearMath/Quaternion.h"
 
-static ros::Publisher landmark_laser_pub; 
+static ros::Publisher landmark_laser_pub, landmark_pub; 
 
-void circle_fit(std::vector<std::vector<turtlelib::Vector2D>> cluster_gp)
+void markers_landmarks(std::vector<std::vector<double>> circles)
 {
-    for(int i=0; i<int(cluster_gp.size()); i++)
+    int num_of_circles = circles.size();
+    visualization_msgs::MarkerArray landmarks_array; 
+    landmarks_array.markers.resize(num_of_circles);
+
+    for (int i = 0; i<num_of_circles; i++)
+    {
+        std::vector<double> circle; 
+        circle = circles.at(i); 
+        landmarks_array.markers[i].header.frame_id = "red_base_footprint";
+        landmarks_array.markers[i].header.stamp = ros::Time::now();
+        landmarks_array.markers[i].id = i;
+
+        landmarks_array.markers[i].type = visualization_msgs::Marker::CYLINDER;
+        landmarks_array.markers[i].action = visualization_msgs::Marker::ADD;
+
+        landmarks_array.markers[i].pose.position.x = circle.at(0);
+        landmarks_array.markers[i].pose.position.y = circle.at(1);
+        landmarks_array.markers[i].pose.position.z = 0.0;
+
+        tf2::Quaternion q_obs;
+        q_obs.setRPY(0, 0,0);
+
+        landmarks_array.markers[i].pose.orientation.x = q_obs.x();
+        landmarks_array.markers[i].pose.orientation.y = q_obs.y();
+        landmarks_array.markers[i].pose.orientation.z = q_obs.z();
+        landmarks_array.markers[i].pose.orientation.w = q_obs.w();
+
+        landmarks_array.markers[i].scale.x = 2*sqrt(circle.at(2));
+        landmarks_array.markers[i].scale.y = 2*sqrt(circle.at(2));
+        landmarks_array.markers[i].scale.z = 0.25;
+
+
+        landmarks_array.markers[i].color.r = 1;
+        landmarks_array.markers[i].color.g = 0;
+        landmarks_array.markers[i].color.b = 0;
+        landmarks_array.markers[i].color.a = 1;
+        landmarks_array.markers[i].lifetime = ros::Duration(0.5); 
+
+    }
+
+   landmark_pub.publish(landmarks_array);
+}
+
+
+std::vector<std::vector<double>> circle_fit(std::vector<std::vector<turtlelib::Vector2D>> cluster_gp)
+{
+    int group_len = int(cluster_gp.size()); 
+
+    std::vector<std::vector<double>> circle_data; 
+
+    for(int i=0; i<group_len; i++)
     {
         // create variable for cluster
         std::vector<turtlelib::Vector2D> cluster; 
@@ -80,8 +131,80 @@ void circle_fit(std::vector<std::vector<turtlelib::Vector2D>> cluster_gp)
 
         ROS_INFO_STREAM("Z after" <<  Z); 
 
+        arma::Mat<double> M = (Z.t())*(Z)/len; 
+
+        arma::Mat<double> H;
+        H = {{8*z_mean, 0, 0, 2},
+             {0,        1, 0, 0},
+             {0,        0, 1, 0},
+             {2,        0, 0, 0},
+            }; 
+        
+        arma::Mat<double> H_inv; 
+        H_inv = arma::inv(H); 
+        // ROS_INFO_STREAM("H_inv" <<  H_inv);
+        arma::Mat<double> U, V;
+        arma::vec s, s_q; 
+        arma::svd(U,s,V,Z); 
+
+         
+        double eig4 = s(3); 
+        // ROS_INFO_STREAM("V after" <<  V);
+        arma::Mat<double> A(4,1), Y_mat, Q_mat; 
+
+        if(eig4<10e-12)
+        {
+            A(0) = V(0,3); 
+            A(1) = V(1,3);
+            A(2) = V(2,3);
+            A(3) = V(3,3);
+        }
+        else{
+            arma::Mat<double> Sig, A_st(4,1), Eigvec; 
+            Sig = diagmat(s); 
+            // ROS_INFO_STREAM("Sigma" <<  Sig);
+            Y_mat = V*Sig*(V.t()); 
+            Q_mat = Y_mat*H_inv*Y_mat; 
+            // ROS_INFO_STREAM("Q" <<  Q_mat);
+            // ROS_INFO_STREAM("Y_mat" <<  Y_mat);
+            
+            arma::eig_sym(s_q,Eigvec,Q_mat); 
+            int min_sig_index = 3;
+            // ROS_INFO_STREAM("s_q" <<  s_q);
+            for(int i=3; i>=0; i--)
+            {
+                if(s_q(i)>0)
+                {
+                    min_sig_index = i;
+                    break;
+                } 
+            }
+            // ROS_INFO_STREAM("min_sig_index" <<  min_sig_index);
+
+            A_st(0) = Eigvec(0,min_sig_index); 
+            A_st(1) = Eigvec(1,min_sig_index); 
+            A_st(2) = Eigvec(2,min_sig_index); 
+            A_st(3) = Eigvec(3,min_sig_index);
+            A = inv(Y_mat)*A_st; 
+
+        }
+        // ROS_INFO_STREAM("A" <<  A);
+
+        double a = -A(1)/(2*A(0));  
+        double b = -A(2)/(2*A(0)); 
+        double R_s = (pow(A(1),2)+pow(A(2),2)-(4*A(0)*A(3)))/(4*pow(A(0),2)); 
+        a += c_x; 
+        b += c_y;
+        
+        std::vector<double> data = {a,b,R_s}; 
+        ROS_INFO_STREAM("data a" <<  a);
+        ROS_INFO_STREAM("data b" <<  b);
+        ROS_INFO_STREAM("data R" <<  sqrt(R_s));
+        circle_data.push_back(data);         
 
     }
+
+    return circle_data; 
 }
 
 
@@ -141,7 +264,14 @@ void laser_callback(const sensor_msgs::LaserScan& scan)
 
 
     }
-    circle_fit(cluster_group); 
+
+    if(cluster_group.size()>0)
+    {
+        std::vector<std::vector<double>> circles; 
+        circles = circle_fit(cluster_group); 
+        markers_landmarks(circles); 
+    }
+
     // Markers for clusters
     visualization_msgs::MarkerArray landmark_laser; 
     
@@ -194,7 +324,7 @@ int main(int argc, char** argv)
 
     ros::Subscriber laser_sub = nh.subscribe("scan", 10, laser_callback); 
     landmark_laser_pub = nh.advertise<visualization_msgs::MarkerArray>("landmark_cluster", 1);
-
+    landmark_pub = nh.advertise<visualization_msgs::MarkerArray>("landmarks", 1);
     
     while(ros::ok())
     {

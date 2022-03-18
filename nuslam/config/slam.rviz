@@ -8,7 +8,6 @@ Panels:
         - /Status1
         - /RobotModel1
         - /TF1/Frames1
-        - /Path3
       Splitter Ratio: 0.5
     Tree Height: 551
   - Class: rviz/Selection
@@ -438,6 +437,14 @@ Visualization Manager:
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /landmark_cluster
+      Name: MarkerArray
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /landmarks
       Name: MarkerArray
       Namespaces:
         "": true
