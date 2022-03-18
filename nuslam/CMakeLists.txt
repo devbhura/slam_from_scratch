@@ -18,7 +18,7 @@ find_package(
   tf2_ros
   message_runtime
   geometry_msgs
-
+  catch_ros
 )
 
 find_package(Armadillo REQUIRED)
@@ -245,3 +245,16 @@ install(DIRECTORY include/${PROJECT_NAME}/
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+if(CATKIN_ENABLE_TESTING)
+
+    catch_add_test(circle_test
+    tests/circle_tests.cpp
+    )
+
+    target_link_libraries(circle_test
+    ${catkin_LIBRARIES}
+    nuslam
+    ${ARMADILLO_LIBRARIES}
+    turtlelib
+    )
+endif()
