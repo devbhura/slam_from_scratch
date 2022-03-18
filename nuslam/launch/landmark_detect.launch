@@ -10,7 +10,7 @@
 
     </group> 
 
-    <node name="landmarks" pkg="nuslam" type="landmarks" output="screen"/> 
+    <!-- <node name="landmarks" pkg="nuslam" type="landmarks" output="screen"/>  -->
 
 
 </launch> 

@@ -201,6 +201,7 @@ namespace slam
 
         // std::cout << "group len" << group_len << std::endl; 
 
+        if(group_len>0){
         for(int i=0; i<group_len; i++)
         {
             // create variable for cluster
@@ -345,6 +346,7 @@ namespace slam
         }
 
         return circle_data; 
+    }
     }
 
 }
