@@ -201,19 +201,26 @@ namespace slam
 
         // std::cout << "group len" << group_len << std::endl; 
 
-        if(group_len>0){
+        
         for(int i=0; i<group_len; i++)
         {
             // create variable for cluster
             std::vector<turtlelib::Vector2D> cluster; 
             cluster = cluster_gp.at(i); 
-            
+
+            bool flag = false; 
+
+            flag = slam::classify_circle(cluster); 
+
+            if(flag)
+            {           
             // variables for centroid
             double c_x = 0.0; double c_y = 0.0; 
 
             int len = cluster.size(); 
+
             // Create vectors for x, y 
-            // std::cout << "cluster len " << len << std::endl; 
+            std::cout << "cluster len " << len << std::endl; 
             arma::Mat<double> X_arr(len,1), Y_arr(len,1), Z_arr(len,1); 
             
             for(int j=0; j<len; j++)
@@ -341,12 +348,64 @@ namespace slam
             // ROS_INFO_STREAM("data a" <<  a);
             // ROS_INFO_STREAM("data b" <<  b);
             // ROS_INFO_STREAM("data R" <<  sqrt(R_s));
-            circle_data.push_back(data);         
+            
+            circle_data.push_back(data);   
+                   
 
         }
 
+        }
         return circle_data; 
+    
     }
+
+    bool classify_circle(std::vector<turtlelib::Vector2D> cluster)
+    {
+
+        turtlelib::Vector2D p_first, p_last, p, p1, p2;
+        p_first = cluster[0]; 
+        p_last = cluster[cluster.size()-1]; 
+
+        int len_cluster = int(cluster.size()); 
+        std::vector<double> angles; 
+
+        double angle_mean = 0.0; 
+
+        for (int i = 1; i<len_cluster-1; i++)
+        {
+            p = cluster.at(i); 
+
+            p1 = p_first - p; 
+            p2 = p - p_last; 
+
+            double ang = p1.angle(p1, p2); 
+            ang = turtlelib::rad2deg(ang); 
+            angles.push_back(ang); 
+            angle_mean += ang; 
+
+        }
+        angle_mean = angle_mean/angles.size(); 
+
+        double stddev = 0.0; 
+        for(int i=0; i<angles.size(); i++){
+            stddev += pow(turtlelib::deg2rad(angles[i]-angle_mean), 2); 
+        }
+
+        stddev = sqrt(stddev/angles.size()); 
+        
+        std::cout << "stddev" << stddev <<std::endl; 
+        std::cout << "angle_mean" << angle_mean <<std::endl; 
+
+        bool flag = false; 
+        if (stddev<0.15 && angle_mean>80 && angle_mean<135 )
+        { 
+    
+                flag = true; 
+        }
+
+
+
+        return flag; 
     }
 
 }

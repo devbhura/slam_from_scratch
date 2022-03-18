@@ -31,7 +31,7 @@ void markers_landmarks(std::vector<std::vector<double>> circles)
     int num_of_circles = circles.size();
     visualization_msgs::MarkerArray landmarks_array; 
     landmarks_array.markers.resize(num_of_circles);
-
+    if(num_of_circles>0){
     for (int i = 0; i<num_of_circles; i++)
     {
         std::vector<double> circle; 
@@ -67,7 +67,7 @@ void markers_landmarks(std::vector<std::vector<double>> circles)
         landmarks_array.markers[i].lifetime = ros::Duration(0.5); 
 
     }
-
+    } 
    landmark_pub.publish(landmarks_array);
 }
 
@@ -230,7 +230,7 @@ void laser_callback(const sensor_msgs::LaserScan& scan)
     
     double dist_thres = 0.05; 
 
-    int min_cluster_size = 3; 
+    int min_cluster_size = 4; 
     int max_cluster_size = 20; 
     
     int len = scan.ranges.size(); 
@@ -254,8 +254,12 @@ void laser_callback(const sensor_msgs::LaserScan& scan)
         else{
             if(cluster.size()>= min_cluster_size && cluster.size()<= max_cluster_size )
             {
+                bool flag = slam::classify_circle(cluster); 
+                if(flag == true)
+                {
                 cluster_group.push_back(cluster);
                 num_points += cluster.size(); 
+                }
 
             }
             cluster.clear(); 

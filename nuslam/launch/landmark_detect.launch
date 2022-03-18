@@ -1,16 +1,19 @@
 <launch>
 
     <arg name="robot" default="nusim"/>
+    <arg name="cmd_src" default="circle"/>
+
+
 
     <group if="$(eval arg('robot') == 'nusim')">
 
         <include file="$(find nuslam)/launch/slam.launch">
-
+            <arg name="cmd_src" value="$(arg cmd_src)"/>
         </include> 
 
     </group> 
 
-    <!-- <node name="landmarks" pkg="nuslam" type="landmarks" output="screen"/>  -->
+    <node name="landmarks" pkg="nuslam" type="landmarks" output="screen"/> 
 
 
 </launch> 

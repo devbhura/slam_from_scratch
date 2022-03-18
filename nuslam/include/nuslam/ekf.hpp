@@ -65,6 +65,7 @@ namespace slam
 
     std::vector<std::vector<double>> circle_fit(std::vector<std::vector<turtlelib::Vector2D>> cluster_gp); 
 
+    bool classify_circle(std::vector<turtlelib::Vector2D> cluster); 
 }
 
 
