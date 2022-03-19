@@ -168,10 +168,10 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray& obstacle_msg)
 
 void slam_timer_callback(const ros::TimerEvent&)
 {
-    int m = measurement.size();
+    int m_size = measurement.size();
     green_fake_sensor.markers.resize(m);
 
-    for(int i = 0; i<m; i++)
+    for(int i = 0; i<m_size; i++)
     {   
         turtlelib::Twist u = twist;
         // ROS_INFO_STREAM("Twist"<<u); 
