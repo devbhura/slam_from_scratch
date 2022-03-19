@@ -169,7 +169,7 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray& obstacle_msg)
 void slam_timer_callback(const ros::TimerEvent&)
 {
     int m_size = measurement.size();
-    green_fake_sensor.markers.resize(m);
+    green_fake_sensor.markers.resize(m_size);
 
     for(int i = 0; i<m_size; i++)
     {   

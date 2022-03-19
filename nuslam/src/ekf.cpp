@@ -209,10 +209,10 @@ namespace slam
             cluster = cluster_gp.at(i); 
 
             bool flag = false; 
-
+            // std::cout << "flag prev " << flag << std::endl;             if(flag)
+            
             flag = slam::classify_circle(cluster); 
-
-            if(flag)
+            // std::cout << "flag " << flag << std::endl;             if(flag)
             {           
             // variables for centroid
             double c_x = 0.0; double c_y = 0.0; 
@@ -220,7 +220,7 @@ namespace slam
             int len = cluster.size(); 
 
             // Create vectors for x, y 
-            std::cout << "cluster len " << len << std::endl; 
+            // std::cout << "cluster len " << len << std::endl; 
             arma::Mat<double> X_arr(len,1), Y_arr(len,1), Z_arr(len,1); 
             
             for(int j=0; j<len; j++)
@@ -363,6 +363,7 @@ namespace slam
     {
 
         turtlelib::Vector2D p_first, p_last, p, p1, p2;
+        // std::cout << "classify in " << std::endl; 
         p_first = cluster[0]; 
         p_last = cluster[cluster.size()-1]; 
 
@@ -371,6 +372,7 @@ namespace slam
 
         double angle_mean = 0.0; 
 
+        // std::cout << "len_cluster " << len_cluster << std::endl; 
         for (int i = 1; i<len_cluster-1; i++)
         {
             p = cluster.at(i); 
@@ -393,8 +395,8 @@ namespace slam
 
         stddev = sqrt(stddev/angles.size()); 
         
-        std::cout << "stddev" << stddev <<std::endl; 
-        std::cout << "angle_mean" << angle_mean <<std::endl; 
+        // std::cout << "stddev" << stddev <<std::endl; 
+        // std::cout << "angle_mean" << angle_mean <<std::endl; 
 
         bool flag = false; 
         if (stddev<0.15 && angle_mean>80 && angle_mean<135 )
