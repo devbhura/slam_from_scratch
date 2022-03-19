@@ -173,15 +173,18 @@ void slam_timer_callback(const ros::TimerEvent&)
 
     for(int i = 0; i<m_size; i++)
     {   
+        arma::Mat<double> m(2,1);
+        m(0) = measurement[i][0];
+        m(1) =  measurement[i][1]; 
+        ekf_slam.landmark_association(m); 
+        
         turtlelib::Twist u = twist;
         // ROS_INFO_STREAM("Twist"<<u); 
         arma::Mat<double> q_predict =  ekf_slam.predict_q(u);
         arma::Mat<double> A = ekf_slam.calc_A(u); 
         ekf_slam.predict();
         ekf_slam.calc_H(i);
-        arma::Mat<double> m(2,1);
-        m(0) = measurement[i][0];
-        m(1) =  measurement[i][1]; 
+        
         arma::Mat<double> q = ekf_slam.update(m);
         // ROS_INFO_STREAM("robot state" << q); 
         slam_config.phi = q(0);
@@ -291,12 +294,13 @@ void initialize()
 {
     //initialize ekf slam object
     turtlelib::Config con = diff_drive.getConfig();
+    int m_size = measurement.size();
     arma::Mat<double> q_0(3,1); 
     q_0(0) = con.phi;
     q_0(1) = con.x; 
     q_0(2) = con.y;
     arma::Mat<double> m_0 = arma::zeros(2,1);
-    int m_size = measurement.size();
+    
     
     for(int i=0; i<m_size; i++)
     {
@@ -371,7 +375,9 @@ int main(int argc, char** argv)
     
     // subscribe to joint state
     joint_state_sub = nh.subscribe("joint_states", 1, joint_state_callback);
-    fake_sensor_sub = nh.subscribe("obstacle/fake_sensor", 5, fake_sensor_callback);
+    // fake_sensor_sub = nh.subscribe("obstacle/fake_sensor", 5, fake_sensor_callback);
+    fake_sensor_sub = nh.subscribe("landmarks", 5, fake_sensor_callback);
+    
     ros::Timer slam_timer = nh.createTimer(ros::Duration(0.2), slam_timer_callback);
 
     // Assign the publisher odom

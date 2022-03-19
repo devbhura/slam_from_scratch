@@ -193,6 +193,116 @@ namespace slam
         return q_previous; 
     }
 
+    arma::Mat<double> ekf::calc_zhat_data_asso(int j, arma::Mat<double> q_prov)
+    {
+        double mx = q_prov(3 + 2*j); 
+        double my = q_prov(4 + 2*j); 
+        double theta = q_prov(0); 
+        double x = q_prov(1);
+        double y = q_prov(2);
+
+        arma::Mat<double> z_exp(2,1); 
+        
+        z_exp(0) = sqrt(pow((mx - x),2)+ pow((my-y),2));
+        z_exp(1) = atan2((my-y),(mx-x)) - theta;
+        z_exp(1) = turtlelib::normalize_angle(z_predict(1));
+
+        return z_exp; 
+    }
+
+    arma::Mat<double> ekf::calc_H_data_asso(int j, arma::Mat<double> q_prov, int prov_len)
+    {
+        double mx = q_prov(3 + 2*j); 
+        double my = q_prov(4 + 2*j); 
+        double theta = q_prov(0); 
+        double x = q_prov(1);
+        double y = q_prov(2);
+
+        arma::Mat<double> z_exp(2,1); 
+        
+        z_exp(0) = sqrt(pow((mx - x),2)+ pow((my-y),2));
+        z_exp(1) = atan2((my-y),(mx-x)) - theta;
+        z_exp(1) = turtlelib::normalize_angle(z_predict(1)); 
+        double delx = mx - x; 
+        double dely = my - y;
+
+        arma::Mat<double> H_q, H_prov; 
+        double d = pow(delx,2) + pow(dely, 2);
+        // arma::Mat<double> H_q(3,2); 
+        // H_q(0,0) = 0.0;
+        // H_q(1,0) = -1.0;
+        // H_q(0,1) = -delx/sqrt(d);
+        // H_q(1,1) = dely/d;
+        // H_q()
+        H_q = {{0, -delx/sqrt(d), -dely/sqrt(d)},
+               {-1, dely/d, -delx/d}};
+        
+        arma::Mat<double> H_m = arma::zeros(2,2*prov_len); 
+        int index = 2*j;
+        H_m(0,index) = delx/sqrt(d);
+        H_m(1,index) = -dely/d;
+        H_m(0,index+1) = dely/sqrt(d);
+        H_m(1,index+1) = delx/d;
+
+        H_prov = arma::join_rows(H_q, H_m); 
+
+        // Q.print("Q"); 
+        // R.print("R");
+        // A.print("A");
+        // H.print("H");
+        // Sigma_previous.print("Sigma_prev");
+        // q_previous.print("q_prev");
+
+        return H_prov; 
+    }
+
+    void ekf::landmark_association(arma::Mat<double> mu)
+    {
+        double r = mu(0); 
+        double phi = mu(1); 
+        double theta = q_previous(0); 
+        double x = q_previous(1);
+        double y = q_previous(2);
+
+        double mx = x + r*cos(phi+theta); 
+        double my = y + r*sin(phi+theta); 
+
+        arma::Mat<double> m(2,1); 
+        m(0) = mx; 
+        m(1) = my; 
+
+        arma::Mat<double> q_prov, cov_prov; 
+
+        q_prov = arma::join_cols(q_previous,m); 
+
+        double obs_size_prov = obs_size + 1;
+        std::vector<double> distances; 
+
+        for(int i=0; i<obs_size_prov; i++)
+        {
+            arma::Mat<double> H_asso, Sig_prov; 
+            H_asso = ekf::calc_H_data_asso(i,q_prov,obs_size_prov); 
+            arma::Mat<double> z_hat; 
+            z_hat = ekf::calc_zhat_data_asso(i,q_prov); 
+
+            arma::Mat<double> z_diff = mu - z_hat; 
+            Sig_prov = resize(Sigma_previous, 3+2*obs_size_prov, 3+2*obs_size_prov); 
+            cov_prov = H_asso*Sig_prov*(H_asso.t()) + R;
+            arma::Mat<double> z_vec(2,1); 
+            z_vec(0) = z_diff(0); 
+            z_vec(1) = z_diff(1);
+               
+            auto dist = z_vec.t()*cov_prov.i()*(z_vec); 
+            double d; 
+            d = dist.eval()(0,0);  
+            distances.push_back(d); 
+
+        } 
+
+        
+     
+    }
+
     std::vector<std::vector<double>> circle_fit(std::vector<std::vector<turtlelib::Vector2D>> cluster_gp)
     {
         int group_len = int(cluster_gp.size()); 

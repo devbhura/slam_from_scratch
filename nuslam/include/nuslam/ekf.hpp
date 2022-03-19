@@ -61,6 +61,11 @@ namespace slam
             void predict();
             arma::Mat<double> update(arma::Mat<double> z_measured);
 
+            arma::Mat<double> calc_zhat_data_asso(int j, arma::Mat<double> q_prov); 
+            arma::Mat<double> calc_H_data_asso(int j, arma::Mat<double> q_prov, int prov_len); 
+
+            void landmark_association(arma::Mat<double> mu); 
+
     };
 
     std::vector<std::vector<double>> circle_fit(std::vector<std::vector<turtlelib::Vector2D>> cluster_gp); 
