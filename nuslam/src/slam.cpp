@@ -168,22 +168,31 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray& obstacle_msg)
 
 void slam_timer_callback(const ros::TimerEvent&)
 {
-    int m_size = measurement.size();
+    if(slam_flag)
+    {
+    std::vector<std::vector<double>> measurement_temp;
+    measurement_temp = measurement;  
+    int m_size = measurement_temp.size();
     green_fake_sensor.markers.resize(m_size);
+
 
     for(int i = 0; i<m_size; i++)
     {   
         arma::Mat<double> m(2,1);
-        m(0) = measurement[i][0];
-        m(1) =  measurement[i][1]; 
-        ekf_slam.landmark_association(m); 
-        
+        m(0) = measurement_temp[i][0];
+        m(1) =  measurement_temp[i][1]; 
+        int id = ekf_slam.landmark_association(m); 
+
+        // if(id<0)
+        // {
+        //     break; 
+        // }
         turtlelib::Twist u = twist;
         // ROS_INFO_STREAM("Twist"<<u); 
         arma::Mat<double> q_predict =  ekf_slam.predict_q(u);
         arma::Mat<double> A = ekf_slam.calc_A(u); 
         ekf_slam.predict();
-        ekf_slam.calc_H(i);
+        ekf_slam.calc_H(id);
         
         arma::Mat<double> q = ekf_slam.update(m);
         // ROS_INFO_STREAM("robot state" << q); 
@@ -192,34 +201,34 @@ void slam_timer_callback(const ros::TimerEvent&)
         slam_config.y = q(2);
 
         // Publish Green Markers
-        green_fake_sensor.markers[i].header.frame_id = "map";
-        green_fake_sensor.markers[i].header.stamp = ros::Time::now();
-        green_fake_sensor.markers[i].id = i;
+        green_fake_sensor.markers[id].header.frame_id = "map";
+        green_fake_sensor.markers[id].header.stamp = ros::Time::now();
+        green_fake_sensor.markers[id].id = id;
 
-        green_fake_sensor.markers[i].type = visualization_msgs::Marker::CYLINDER;
-        green_fake_sensor.markers[i].action = visualization_msgs::Marker::ADD;
+        green_fake_sensor.markers[id].type = visualization_msgs::Marker::CYLINDER;
+        green_fake_sensor.markers[id].action = visualization_msgs::Marker::ADD;
 
-        green_fake_sensor.markers[i].pose.position.x = q(3+2*i);
-        green_fake_sensor.markers[i].pose.position.y = q(4+2*i);
-        green_fake_sensor.markers[i].pose.position.z = 0.0;
+        green_fake_sensor.markers[id].pose.position.x = q(3+2*id);
+        green_fake_sensor.markers[id].pose.position.y = q(4+2*id);
+        green_fake_sensor.markers[id].pose.position.z = 0.0;
 
         tf2::Quaternion q_obs;
         q_obs.setRPY(0, 0, 0);
 
-        green_fake_sensor.markers[i].pose.orientation.x = q_obs.x();
-        green_fake_sensor.markers[i].pose.orientation.y = q_obs.y();
-        green_fake_sensor.markers[i].pose.orientation.z = q_obs.z();
-        green_fake_sensor.markers[i].pose.orientation.w = q_obs.w();
+        green_fake_sensor.markers[id].pose.orientation.x = q_obs.x();
+        green_fake_sensor.markers[id].pose.orientation.y = q_obs.y();
+        green_fake_sensor.markers[id].pose.orientation.z = q_obs.z();
+        green_fake_sensor.markers[id].pose.orientation.w = q_obs.w();
 
-        green_fake_sensor.markers[i].scale.x = 2*obs_radius;
-        green_fake_sensor.markers[i].scale.y = 2*obs_radius;
-        green_fake_sensor.markers[i].scale.z = 0.25;
+        green_fake_sensor.markers[id].scale.x = 2*obs_radius;
+        green_fake_sensor.markers[id].scale.y = 2*obs_radius;
+        green_fake_sensor.markers[id].scale.z = 0.25;
 
 
-        green_fake_sensor.markers[i].color.r = 0;
-        green_fake_sensor.markers[i].color.g = 1;
-        green_fake_sensor.markers[i].color.b = 0;
-        green_fake_sensor.markers[i].color.a = 1;
+        green_fake_sensor.markers[id].color.r = 0;
+        green_fake_sensor.markers[id].color.g = 1;
+        green_fake_sensor.markers[id].color.b = 0;
+        green_fake_sensor.markers[id].color.a = 1;
 
         green_sensor_pub.publish(green_fake_sensor); 
 
@@ -251,6 +260,8 @@ void slam_timer_callback(const ros::TimerEvent&)
     }
 
     green_path_pub.publish(green_path); 
+
+    } 
 }
 
 void publish_slam()
@@ -378,7 +389,7 @@ int main(int argc, char** argv)
     // fake_sensor_sub = nh.subscribe("obstacle/fake_sensor", 5, fake_sensor_callback);
     fake_sensor_sub = nh.subscribe("landmarks", 5, fake_sensor_callback);
     
-    ros::Timer slam_timer = nh.createTimer(ros::Duration(0.2), slam_timer_callback);
+    ros::Timer slam_timer = nh.createTimer(ros::Duration(0.002), slam_timer_callback);
 
     // Assign the publisher odom
     odom_pub = nh.advertise<nav_msgs::Odometry>("/odom", 10);

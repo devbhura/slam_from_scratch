@@ -17,10 +17,11 @@ TEST_CASE("Circle Test", "[Cirlcle fit]") { //Devesh Bhura
     std::vector<std::vector<turtlelib::Vector2D>> cluster_group; 
     std::vector<turtlelib::Vector2D> cluster;
     int len = 6; 
-    // std::cout << "len" << len << std::endl; 
+    // std::cout << "len " << len << std::endl; 
 
     for(int i = 0; i<len; i++)
     {
+        // std::cout << "i " << i << std::endl;
         turtlelib::Vector2D p;
         p.x = l(i,0); 
         p.y = l(i,1); 
@@ -39,6 +40,7 @@ TEST_CASE("Circle Test", "[Cirlcle fit]") { //Devesh Bhura
     
     // ROS_INFO_STREAM("Circles"<< circles.size()); 
     std::vector<double> circle; 
+    std::cout << " circle_size " << circle.size() << std::endl;
     circle = circles.at(0); 
     double x_check = 4.615482;
     double y_check = 2.807354;
@@ -49,7 +51,7 @@ TEST_CASE("Circle Test", "[Cirlcle fit]") { //Devesh Bhura
     CHECK(radius == Approx(c_r).margin(e)); 
 }
 
-TEST_CASE("Circle Test 2", "[Cirlcle fit 2]") { //Devesh Bhura
+TEST_CASE("Circle Test 2", "[Circle fit 2]") { //Devesh Bhura
     // turtlelib::Vector2D p;
 
     arma::Mat<double> l = {{-1,0},{-0.3,-0.06},{0.3,0.1},{1,0}}; 

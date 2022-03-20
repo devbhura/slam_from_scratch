@@ -11,9 +11,22 @@
             <arg name="cmd_src" value="$(arg cmd_src)"/>
         </include> 
 
+        <node name="landmarks" pkg="nuslam" type="landmarks" output="screen"/> 
+
     </group> 
 
-    <node name="landmarks" pkg="nuslam" type="landmarks" output="screen"/> 
+    
+
+    <group unless="$(eval arg('robot') == 'nusim')">
+
+        <include file="$(find nuslam)/launch/slam.launch">
+            <arg name="cmd_src" value="$(arg cmd_src)"/>
+            <arg name="robot" value="$(arg robot)"/> 
+        </include> 
+
+        <node name="landmarks" pkg="nuslam" type="landmarks" output="screen" machine="turtlebot"/> 
+
+    </group> 
 
 
 </launch> 

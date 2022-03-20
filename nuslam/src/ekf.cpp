@@ -205,7 +205,7 @@ namespace slam
         
         z_exp(0) = sqrt(pow((mx - x),2)+ pow((my-y),2));
         z_exp(1) = atan2((my-y),(mx-x)) - theta;
-        z_exp(1) = turtlelib::normalize_angle(z_predict(1));
+        z_exp(1) = turtlelib::normalize_angle(z_exp(1));
 
         return z_exp; 
     }
@@ -218,11 +218,11 @@ namespace slam
         double x = q_prov(1);
         double y = q_prov(2);
 
-        arma::Mat<double> z_exp(2,1); 
+        // arma::Mat<double> z_exp(2,1); 
         
-        z_exp(0) = sqrt(pow((mx - x),2)+ pow((my-y),2));
-        z_exp(1) = atan2((my-y),(mx-x)) - theta;
-        z_exp(1) = turtlelib::normalize_angle(z_predict(1)); 
+        // z_exp(0) = sqrt(pow((mx - x),2)+ pow((my-y),2));
+        // z_exp(1) = atan2((my-y),(mx-x)) - theta;
+        // z_exp(1) = turtlelib::normalize_angle(z_predict(1)); 
         double delx = mx - x; 
         double dely = my - y;
 
@@ -256,7 +256,7 @@ namespace slam
         return H_prov; 
     }
 
-    void ekf::landmark_association(arma::Mat<double> mu)
+    int ekf::landmark_association(arma::Mat<double> mu)
     {
         double r = mu(0); 
         double phi = mu(1); 
@@ -264,8 +264,11 @@ namespace slam
         double x = q_previous(1);
         double y = q_previous(2);
 
-        double mx = x + r*cos(phi+theta); 
-        double my = y + r*sin(phi+theta); 
+        // double mx = x + r*cos(phi+theta); 
+        // double my = y + r*sin(phi+theta); 
+
+        double mx = r*cos(phi); 
+        double my = r*sin(phi); 
 
         arma::Mat<double> m(2,1); 
         m(0) = mx; 
@@ -275,10 +278,16 @@ namespace slam
 
         q_prov = arma::join_cols(q_previous,m); 
 
+
         double obs_size_prov = obs_size + 1;
         std::vector<double> distances; 
 
-        for(int i=0; i<obs_size_prov; i++)
+        int new_size = 3+2*obs_size_prov; 
+
+        int id = 0; 
+        double min_thres = 0.0005;
+        bool flag_done = false; 
+        for(int i=0; i<obs_size_prov-1; i++)
         {
             arma::Mat<double> H_asso, Sig_prov; 
             H_asso = ekf::calc_H_data_asso(i,q_prov,obs_size_prov); 
@@ -286,7 +295,9 @@ namespace slam
             z_hat = ekf::calc_zhat_data_asso(i,q_prov); 
 
             arma::Mat<double> z_diff = mu - z_hat; 
-            Sig_prov = resize(Sigma_previous, 3+2*obs_size_prov, 3+2*obs_size_prov); 
+            Sig_prov = resize(Sigma_previous, new_size, new_size); 
+            Sig_prov(new_size-2,new_size-2) = 100000; 
+            Sig_prov(new_size-1,new_size-1) = 100000; 
             cov_prov = H_asso*Sig_prov*(H_asso.t()) + R;
             arma::Mat<double> z_vec(2,1); 
             z_vec(0) = z_diff(0); 
@@ -294,13 +305,61 @@ namespace slam
                
             auto dist = z_vec.t()*cov_prov.i()*(z_vec); 
             double d; 
+            id = i; 
+            
+            // if(d < min_thres)
+            // {
+            //     flag_done = true; 
+            //     break; 
+            // }
+
             d = dist.eval()(0,0);  
+            // std::cout << " distance: " << d << std::endl;
             distances.push_back(d); 
 
         } 
-
         
-     
+        // if(flag_done)
+        // {
+        //     std::cout << "flag_done. ID: " << id << std::endl; 
+        // }
+
+        if(distances.size() > 0)
+        {
+        int minElementIndex = std::min_element(distances.begin(),distances.end()) - distances.begin();
+        double minElement = *std::min_element(distances.begin(), distances.end());
+
+        std::cout << "Min element index" << minElementIndex << std::endl; 
+        // std::cout << "Min element" << minElement << std::endl;
+
+        if(minElementIndex < obs_size && minElement < 4)
+        {
+            return minElementIndex; 
+        }
+        else{
+
+            // arma::Mat<double> Sigma_set, A_set, H_set, Q_set, q_set;            
+            // q_set = q_prov;
+            // A_set = resize(A,new_size,new_size); 
+            // Sigma_set = resize(Sigma_previous, new_size, new_size);
+            // H_set = resize(H, 2, new_size);
+            // Q_set = resize(Q,new_size,new_size); 
+            // Q_set(new_size,new_size) = 0.01; 
+            // Q_set(new_size,new_size) = 0.01;
+            
+            // ekf::setQ(Q_set); 
+            // ekf::setA(A_set); 
+            // ekf::setH(H_set); 
+            // Sigma_previous = Sigma_set; 
+            // obs_size = obs_size_prov; 
+            
+            // return obs_size_prov - 1; 
+            return minElementIndex;
+
+        }
+
+        }
+
     }
 
     std::vector<std::vector<double>> circle_fit(std::vector<std::vector<turtlelib::Vector2D>> cluster_gp)
@@ -322,7 +381,8 @@ namespace slam
             // std::cout << "flag prev " << flag << std::endl;             if(flag)
             
             flag = slam::classify_circle(cluster); 
-            // std::cout << "flag " << flag << std::endl;             if(flag)
+            // std::cout << "flag " << flag << std::endl;             
+            if(flag)
             {           
             // variables for centroid
             double c_x = 0.0; double c_y = 0.0; 
@@ -407,7 +467,7 @@ namespace slam
             double eig4 = s(3); 
             // ROS_INFO_STREAM("V after" <<  V);
             arma::Mat<double> A(4,1), Y_mat, Q_mat; 
-
+            // std::cout << " eig " << eig4 <<std::endl;
             if(eig4<10e-12)
             {
                 A(0) = V(0,3); 
@@ -453,14 +513,19 @@ namespace slam
             double R_s = (pow(A(1),2)+pow(A(2),2)-(4*A(0)*A(3)))/(4*pow(A(0),2)); 
             a += c_x; 
             b += c_y;
-            
+            // std::cout << " a " << a <<std::endl;
+            // std::cout << " b " << b <<std::endl;
+            // std::cout << " R_s " << R_s <<std::endl;
             std::vector<double> data = {a,b,R_s}; 
             // ROS_INFO_STREAM("data a" <<  a);
             // ROS_INFO_STREAM("data b" <<  b);
             // ROS_INFO_STREAM("data R" <<  sqrt(R_s));
             
-            circle_data.push_back(data);   
-                   
+            if(sqrt(R_s) < 0.05)
+            {
+            circle_data.push_back(data); 
+            }
+                
 
         }
 
@@ -476,8 +541,10 @@ namespace slam
         // std::cout << "classify in " << std::endl; 
         p_first = cluster[0]; 
         p_last = cluster[cluster.size()-1]; 
+        
 
         int len_cluster = int(cluster.size()); 
+        
         std::vector<double> angles; 
 
         double angle_mean = 0.0; 
@@ -486,14 +553,21 @@ namespace slam
         for (int i = 1; i<len_cluster-1; i++)
         {
             p = cluster.at(i); 
-
+            // std::cout << "p.x " << p.x <<std::endl;
+            // std::cout << "p.y " << p.y <<std::endl;
             p1 = p_first - p; 
             p2 = p - p_last; 
 
+            // std::cout << "p1.x " << p1.x <<std::endl;
+            // std::cout << "p1.y " << p1.y <<std::endl;
+            // std::cout << "p2.x " << p2.x <<std::endl;
+            // std::cout << "p2.y " << p2.y <<std::endl;
             double ang = p1.angle(p1, p2); 
+            // std::cout << "angle" << ang <<std::endl;
             ang = turtlelib::rad2deg(ang); 
             angles.push_back(ang); 
             angle_mean += ang; 
+            // std::cout << "angle_mean" << angle_mean <<std::endl;
 
         }
         angle_mean = angle_mean/angles.size(); 
@@ -504,18 +578,18 @@ namespace slam
         }
 
         stddev = sqrt(stddev/angles.size()); 
-        
-        // std::cout << "stddev" << stddev <<std::endl; 
-        // std::cout << "angle_mean" << angle_mean <<std::endl; 
 
         bool flag = false; 
-        if (stddev<0.15 && angle_mean>80 && angle_mean<135 )
+        if (stddev<0.15 && angle_mean>60 && angle_mean<150 )
         { 
     
                 flag = true; 
         }
 
-
+        if(isnan(angle_mean))
+        {
+            flag = true; 
+        }
 
         return flag; 
     }

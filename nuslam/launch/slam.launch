@@ -13,9 +13,7 @@
     <include if="$(eval arg('cmd_src') == 'teleop')" file="$(find turtlebot3_teleop)/launch/turtlebot3_teleop_key.launch"/>
 
     <group if="$(eval arg('robot') == 'nusim')">
-
-        
-        
+    
         <include file="$(find nusim)/launch/nusim.launch">
             <arg name="use_rviz" value="false"/>
         </include>
@@ -40,6 +38,41 @@
         </include>
 
         <node name="slam" pkg="nuslam" type="slam" output="screen"/>
+
+        <node if="$(eval arg('cmd_src') == 'circle')" name="circle" pkg="nuturtle_control" type="circle"/>
+
+        <node name="rviz" pkg="rviz" type="rviz" args="-f world -d $(find nuslam)/config/slam.rviz" required="true"/>
+
+    </group>
+
+    <group unless="$(eval arg('robot') == 'nusim')">
+        <include file="$(find nuturtle_control)/launch/basic_remote.launch">
+            <arg name="robot" value="$(arg robot)"/>
+        </include>
+        <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface" output="screen"/>
+
+
+        <include file="$(find nuturtle_description)/launch/load.launch">
+            <arg name="color" value="blue"/>
+            <arg name="y" value="0.8"/>
+            <arg name="x" value="-0.6"/>
+            <arg name="use_rviz" value="false" />
+
+        </include>
+
+        <include file="$(find nuturtle_description)/launch/load.launch">
+            <arg name="color" value="green"/>
+            <arg name="y" value="0.8"/>
+            <arg name="x" value="-0.6"/>
+            <arg name="use_rviz" value="false" />
+
+        </include>
+
+        <remap from="/different_topic" to="/needed_topic"/>
+
+        <node name="slam" pkg="nuslam" type="slam" output="screen" machine="turtlebot"/>
+
+        <node pkg="tf2_ros" type="static_transform_publisher" name="laser_broad" args="0 0 0 0 0 0 1 blue_base_scan laser" />
 
         <node if="$(eval arg('cmd_src') == 'circle')" name="circle" pkg="nuturtle_control" type="circle"/>
 

@@ -36,7 +36,7 @@ void markers_landmarks(std::vector<std::vector<double>> circles)
     {
         std::vector<double> circle; 
         circle = circles.at(i); 
-        landmarks_array.markers[i].header.frame_id = "red_base_footprint";
+        landmarks_array.markers[i].header.frame_id = "laser";
         landmarks_array.markers[i].header.stamp = ros::Time::now();
         landmarks_array.markers[i].id = i;
 
@@ -154,7 +154,7 @@ void laser_callback(const sensor_msgs::LaserScan& scan)
         for(int i = 0; i<int(cluster.size()); i++)
         {
             turtlelib::Vector2D p = cluster.at(i); 
-            landmark_laser.markers[num_points].header.frame_id = "red_base_scan";
+            landmark_laser.markers[num_points].header.frame_id = "laser";
             landmark_laser.markers[num_points].header.stamp = ros::Time::now();
             landmark_laser.markers[num_points].id = num_points;
 
