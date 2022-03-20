@@ -1,13 +1,11 @@
 /// \file
-/// \brief 
-/**
- * PARAMETERS:
-    * timestep (double): tracks the current time step of the simulation
-    
+/// \brief detects landmarks by clustering over laser scan and detecting circles
+/**   
  * BROADCASTERS:
     * 
  * PUBLISHERS:
-    *  
+    *  landmark_laser_pub: publish cluster from laser
+    *  landmark_pub: publish landmark based on circle fitting 
  * SERVICES:
     * 
  * SUBSCRIBERS:
@@ -26,6 +24,11 @@
 
 static ros::Publisher landmark_laser_pub, landmark_pub; 
 
+/// \brief
+/// Publishes markers based on parameters from circle fitting
+/// Input: 
+/// \param circles - nested 2D vector that stores information about circle radius, x, and y
+/// Output: Empty
 void markers_landmarks(std::vector<std::vector<double>> circles)
 {
     int num_of_circles = circles.size();
@@ -36,7 +39,7 @@ void markers_landmarks(std::vector<std::vector<double>> circles)
     {
         std::vector<double> circle; 
         circle = circles.at(i); 
-        landmarks_array.markers[i].header.frame_id = "laser";
+        landmarks_array.markers[i].header.frame_id = "red_base_footprint";
         landmarks_array.markers[i].header.stamp = ros::Time::now();
         landmarks_array.markers[i].id = i;
 
@@ -71,6 +74,14 @@ void markers_landmarks(std::vector<std::vector<double>> circles)
    landmark_pub.publish(landmarks_array);
 }
 
+/// \brief
+/// Converts from polar to cartesian
+/// Input: 
+/// \param r - range value from laser scan
+/// \param i - the ith laser scan being computed
+/// \param ang_inc - increment between two angles of laser scan 
+/// Output:
+/// \param vec - the cartesian x and y points 
 turtlelib::Vector2D conv2cartesian(double r, int i, double ang_inc)
 {
     turtlelib::Vector2D vec;
@@ -84,6 +95,11 @@ turtlelib::Vector2D conv2cartesian(double r, int i, double ang_inc)
     
 }
 
+/// \brief
+/// laser scan callback. It clusters and fits a circle on the cluster 
+/// Input: 
+/// \param scan - laser scan
+/// Output: Empty
 void laser_callback(const sensor_msgs::LaserScan& scan)
 {
 
@@ -100,6 +116,7 @@ void laser_callback(const sensor_msgs::LaserScan& scan)
     int num_points = 0; 
     for(int i = 1; i<len; i++)
     {
+        // clustering 
         double r = scan.ranges.at(i);
         double r_old = scan.ranges.at(i-1);
         turtlelib::Vector2D vec_r =  conv2cartesian(r, i+1, ang_inc); 
@@ -132,6 +149,7 @@ void laser_callback(const sensor_msgs::LaserScan& scan)
 
     }
 
+    // circle fitting 
     if(cluster_group.size()>0)
     {
         std::vector<std::vector<double>> circles; 
@@ -154,7 +172,7 @@ void laser_callback(const sensor_msgs::LaserScan& scan)
         for(int i = 0; i<int(cluster.size()); i++)
         {
             turtlelib::Vector2D p = cluster.at(i); 
-            landmark_laser.markers[num_points].header.frame_id = "laser";
+            landmark_laser.markers[num_points].header.frame_id = "red_base_scan";
             landmark_laser.markers[num_points].header.stamp = ros::Time::now();
             landmark_laser.markers[num_points].id = num_points;
 

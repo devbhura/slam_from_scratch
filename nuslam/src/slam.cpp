@@ -1,16 +1,32 @@
 /// \file
-/// \brief 
+/// \brief runs EKF slam
 /**
  * PARAMETERS:
-    * 
-    * 
+    * body_id (string): name of the body frame of the robot
+    * odom_id (string): name of the odom frame
+    * wheel_left (string): name of the left wheel joint
+    * wheel_right (string): name of the right wheel joint
+    * dist (double): half the track width of the robot
+    * radius (double): radius of the wheel of the robot
+    * x0 (double): initial x position
+    * y0 (double): initial y position
+    * theta0 (double): initial angular orientation
+    * obs_radius (double): radius of the obstacle
  * BROADCASTERS:
-    * 
+    * br: transform from world to blue_base_footprint
+    * map_br: transform from map to odom 
+    * green_br: transform from odom to green_base_footprint
  * PUBLISHERS:
+    * odom_pub: publishes odometry
+    * green_path_pub: publishes the path of the green robot
+    * blue_path_pub: publishes the path of the blue robot
+    * green_sensor_pub: publishes the landmarks as seen in slam
     * 
  * SERVICES:
     * 
  * SUBSCRIBERS:
+    * joint_state_sub: subscribes to joint_states topic
+    * fake_sensor_sub: subscribes to landmarks topic from landmarks.cpp
     * 
  */
 
@@ -166,6 +182,9 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray& obstacle_msg)
     }
 }
 
+/// \brief
+/// timer callback
+/// It runs the slam algorithm at the specified frequency. 
 void slam_timer_callback(const ros::TimerEvent&)
 {
     if(slam_flag)
@@ -264,6 +283,9 @@ void slam_timer_callback(const ros::TimerEvent&)
     } 
 }
 
+/// \brief
+/// publish slam
+/// Publishes all transfroms and results from slam 
 void publish_slam()
 {
     turtlelib::Config odom_q = diff_drive.getConfig(); 
@@ -301,6 +323,9 @@ void publish_slam()
     
 }
 
+/// \brief
+/// Initalize slam
+/// Initializes slam once landmarks are seen 
 void initialize()
 {
     //initialize ekf slam object

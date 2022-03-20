@@ -193,6 +193,7 @@ namespace slam
         return q_previous; 
     }
 
+    // Data association calculate z expected
     arma::Mat<double> ekf::calc_zhat_data_asso(int j, arma::Mat<double> q_prov)
     {
         double mx = q_prov(3 + 2*j); 
@@ -210,6 +211,7 @@ namespace slam
         return z_exp; 
     }
 
+    // Data association calculate H
     arma::Mat<double> ekf::calc_H_data_asso(int j, arma::Mat<double> q_prov, int prov_len)
     {
         double mx = q_prov(3 + 2*j); 
@@ -256,6 +258,7 @@ namespace slam
         return H_prov; 
     }
 
+    // Landmark association 
     int ekf::landmark_association(arma::Mat<double> mu)
     {
         double r = mu(0); 
@@ -362,6 +365,7 @@ namespace slam
 
     }
 
+    // circle fitting on cluster
     std::vector<std::vector<double>> circle_fit(std::vector<std::vector<turtlelib::Vector2D>> cluster_gp)
     {
         int group_len = int(cluster_gp.size()); 
@@ -534,6 +538,7 @@ namespace slam
     
     }
 
+    // classify whether a circle or not
     bool classify_circle(std::vector<turtlelib::Vector2D> cluster)
     {
 
